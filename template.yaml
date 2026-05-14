@@ -18,6 +18,8 @@ Resources:
       UserPoolName: DreamJournalUserPool
       UsernameAttributes:
         - email
+      LambdaConfig:
+        PreSignUp: !GetAtt PreSignUpFunction.Arn
       Policies:
         PasswordPolicy:
           MinimumLength: 8
@@ -91,6 +93,21 @@ Resources:
           - !Ref UserPoolClient
         Issuer: !Sub 'https://cognito-idp.${AWS::Region}.amazonaws.com/${UserPool}'
       Name: CognitoJWT
+
+  # --- Pre Sign-up Trigger ---
+  PreSignUpFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambda/pre_signup/
+      Handler: handler.handler
+
+  PreSignUpPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt PreSignUpFunction.Arn
+      Action: lambda:InvokeFunction
+      Principal: cognito-idp.amazonaws.com
+      SourceArn: !GetAtt UserPool.Arn
 
   # --- Lambda Functions ---
   ListDreamsFunction:
