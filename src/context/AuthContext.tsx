@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import {
-  signIn, signUp, confirmSignUp, signOut,
+  signIn, signUp, signOut,
   getCurrentUserEmail, getIdToken, isConfigured,
 } from '../utils/auth';
 
@@ -10,7 +10,6 @@ interface AuthContextValue {
   isCognitoConfigured: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string) => Promise<void>;
-  confirm: (email: string, code: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -37,10 +36,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await signUp(e, password);
   };
 
-  const confirm = async (e: string, code: string) => {
-    await confirmSignUp(e, code);
-  };
-
   const logout = () => {
     signOut();
     setEmail(null);
@@ -53,7 +48,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isCognitoConfigured: isConfigured(),
       login,
       register,
-      confirm,
       logout,
     }}>
       {children}

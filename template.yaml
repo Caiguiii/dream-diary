@@ -11,14 +11,12 @@ Globals:
 
 Resources:
 
-  # ── Cognito ───────────────────────────────────────────────────────────────────
+  # --- Cognito ---
   UserPool:
     Type: AWS::Cognito::UserPool
     Properties:
       UserPoolName: DreamJournalUserPool
       UsernameAttributes:
-        - email
-      AutoVerifiedAttributes:
         - email
       Policies:
         PasswordPolicy:
@@ -39,7 +37,7 @@ Resources:
         - ALLOW_REFRESH_TOKEN_AUTH
         - ALLOW_USER_SRP_AUTH
 
-  # ── DynamoDB ──────────────────────────────────────────────────────────────────
+  # --- DynamoDB ---
   DreamsTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -56,7 +54,7 @@ Resources:
         - AttributeName: id
           KeyType: RANGE
 
-  # ── HTTP API ──────────────────────────────────────────────────────────────────
+  # --- HTTP API ---
   DreamApi:
     Type: AWS::ApiGatewayV2::Api
     Properties:
@@ -94,7 +92,7 @@ Resources:
         Issuer: !Sub 'https://cognito-idp.${AWS::Region}.amazonaws.com/${UserPool}'
       Name: CognitoJWT
 
-  # ── Lambda Functions ──────────────────────────────────────────────────────────
+  # --- Lambda Functions ---
   ListDreamsFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -122,7 +120,7 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName: !Ref DreamsTable
 
-  # ── API Routes ────────────────────────────────────────────────────────────────
+  # --- API Routes ---
   ListDreamsIntegration:
     Type: AWS::ApiGatewayV2::Integration
     Properties:
@@ -198,7 +196,7 @@ Resources:
       Principal: apigateway.amazonaws.com
       SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${DreamApi}/*'
 
-  # ── S3 + CloudFront ───────────────────────────────────────────────────────────
+  # --- S3 + CloudFront ---
   FrontendBucket:
     Type: AWS::S3::Bucket
     Properties:
@@ -265,7 +263,7 @@ Outputs:
     Value: !Ref UserPoolClient
 
   CloudFrontUrl:
-    Description: Frontend URL (set VITE_API_URL etc in GitHub Secrets then push)
+    Description: Frontend URL
     Value: !Sub 'https://${CloudFrontDistribution.DomainName}'
 
   FrontendBucketName:
