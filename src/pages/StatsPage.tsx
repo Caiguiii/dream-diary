@@ -1,23 +1,36 @@
-import { useMemo } from 'react';
-import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  BarChart, Bar, PieChart, Pie, Cell,
-} from 'recharts';
+import { useMemo, useState } from 'react';
 import { getDreams } from '../utils/storage';
 
-const COLORS = ['#8EA8B8', '#8FAF9A', '#BFA07A', '#9B8FAA', '#B8A0A0', '#8AB0A8', '#C0B090'];
+type Period = 'month' | 'week' | 'all';
 
-const tooltipStyle = {
-  background: '#FAFAF8',
-  border: '1px solid #E0DCD7',
-  borderRadius: '12px',
-  color: '#3A3835',
-  boxShadow: '0 4px 16px rgba(58,56,53,0.08)',
-  fontSize: '13px',
-};
+const PERIOD_LABELS: Record<Period, string> = { month: '本月', week: '本週', all: '全部' };
 
 export default function StatsPage() {
-  const dreams = useMemo(() => getDreams(), []);
+  const allDreams = useMemo(() => getDreams(), []);
+  const [period, setPeriod] = useState<Period>('all');
+
+  const dreams = useMemo(() => {
+    const now = new Date();
+    if (period === 'month') {
+      const monthStr = now.toISOString().slice(0, 7);
+      return allDreams.filter(d => d.date.startsWith(monthStr));
+    }
+    if (period === 'week') {
+      const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      return allDreams.filter(d => new Date(d.date) >= weekAgo);
+    }
+    return allDreams;
+  }, [allDreams, period]);
+
+  const thisWeekCount = useMemo(() => {
+    const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    return allDreams.filter(d => new Date(d.date) >= weekAgo).length;
+  }, [allDreams]);
+
+  const clarityPct = useMemo(() => {
+    if (dreams.length === 0) return 0;
+    return Math.round(dreams.filter(d => d.clarity === 'clear').length / dreams.length * 100);
+  }, [dreams]);
 
   const emotionFreq = useMemo(() => {
     const map: Record<string, number> = {};
@@ -28,7 +41,7 @@ export default function StatsPage() {
     }
     return Object.entries(map)
       .sort((a, b) => b[1] - a[1])
-      .slice(0, 7)
+      .slice(0, 5)
       .map(([name, count]) => ({ name, count }));
   }, [dreams]);
 
@@ -41,36 +54,11 @@ export default function StatsPage() {
     }
     return Object.entries(map)
       .sort((a, b) => b[1] - a[1])
-      .slice(0, 8)
+      .slice(0, 6)
       .map(([name, count]) => ({ name, count }));
   }, [dreams]);
 
-  const themeFreq = useMemo(() => {
-    const map: Record<string, number> = {};
-    for (const d of dreams) {
-      for (const t of d.analysis?.themes ?? []) {
-        map[t] = (map[t] ?? 0) + 1;
-      }
-    }
-    return Object.entries(map)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 6)
-      .map(([name, value]) => ({ name, value }));
-  }, [dreams]);
-
-  const monthlyCount = useMemo(() => {
-    const map: Record<string, number> = {};
-    for (const d of dreams) {
-      const month = d.date.slice(0, 7);
-      map[month] = (map[month] ?? 0) + 1;
-    }
-    return Object.entries(map)
-      .sort()
-      .slice(-6)
-      .map(([month, count]) => ({ month: month.slice(5), count }));
-  }, [dreams]);
-
-  if (dreams.length === 0) {
+  if (allDreams.length === 0) {
     return (
       <div className="py-20 text-center">
         <div className="text-4xl mb-3">📊</div>
@@ -80,164 +68,101 @@ export default function StatsPage() {
     );
   }
 
-  return (
-    <div className="py-8 space-y-6">
-      <h1 className="text-xl font-semibold text-morandi-text">統計分析</h1>
+  const maxEmotion = emotionFreq[0]?.count ?? 1;
 
-      {/* Summary */}
-      <div className="grid grid-cols-3 gap-3">
-        {[
-          { label: '總夢境數', value: dreams.length, icon: '🌙' },
-          { label: '已分析', value: dreams.filter(d => d.analysis).length, icon: '🔮' },
-          { label: '不同主題', value: new Set(dreams.flatMap(d => d.analysis?.themes ?? [])).size, icon: '🎯' },
-        ].map(stat => (
-          <div
-            key={stat.label}
-            className="rounded-2xl bg-morandi-surface border border-morandi-border p-4 text-center shadow-morandi"
+  return (
+    <div className="py-4 space-y-5">
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-bold text-morandi-text">夢境統計</h1>
+        <p className="text-morandi-muted text-sm mt-1">探索你的夢境模式</p>
+      </div>
+
+      {/* Period filter tabs */}
+      <div className="flex gap-1 bg-morandi-surface border border-morandi-border rounded-2xl p-1 shadow-morandi">
+        {(['month', 'week', 'all'] as Period[]).map(p => (
+          <button
+            key={p}
+            onClick={() => setPeriod(p)}
+            className={`flex-1 py-2 rounded-xl text-sm transition-all font-medium ${
+              period === p
+                ? 'bg-morandi-accent text-white shadow-morandi'
+                : 'text-morandi-muted hover:text-morandi-text'
+            }`}
           >
-            <div className="text-2xl mb-1.5">{stat.icon}</div>
-            <div className="text-xl font-semibold text-morandi-text">{stat.value}</div>
-            <div className="text-xs text-morandi-subtle mt-0.5">{stat.label}</div>
-          </div>
+            {PERIOD_LABELS[p]}
+          </button>
         ))}
       </div>
 
-      {/* Monthly Count */}
-      {monthlyCount.length > 0 && (
-        <StatCard title="每月夢境數量" icon="📅">
-          <ResponsiveContainer width="100%" height={180}>
-            <LineChart data={monthlyCount}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(58,56,53,0.06)" />
-              <XAxis
-                dataKey="month"
-                stroke="rgba(58,56,53,0.25)"
-                tick={{ fontSize: 11, fill: '#A4A09B' }}
-              />
-              <YAxis
-                stroke="rgba(58,56,53,0.25)"
-                tick={{ fontSize: 11, fill: '#A4A09B' }}
-                allowDecimals={false}
-              />
-              <Tooltip contentStyle={tooltipStyle} />
-              <Line
-                type="monotone"
-                dataKey="count"
-                stroke="#9B8FAA"
-                strokeWidth={2}
-                dot={{ fill: '#9B8FAA', r: 3 }}
-                name="夢境數"
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </StatCard>
-      )}
+      {/* Summary cards */}
+      <div className="grid grid-cols-3 gap-3">
+        <StatCard value={String(dreams.length)} label="總夢境" />
+        <StatCard value={String(thisWeekCount)} label="本週" />
+        <StatCard value={`${clarityPct}%`} label="清晰度" accent />
+      </div>
 
-      {/* Emotion Frequency */}
+      {/* Emotion frequency */}
       {emotionFreq.length > 0 && (
-        <StatCard title="最常出現的情緒" icon="💫">
-          <ResponsiveContainer width="100%" height={180}>
-            <BarChart data={emotionFreq} layout="vertical">
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(58,56,53,0.06)" horizontal={false} />
-              <XAxis
-                type="number"
-                stroke="rgba(58,56,53,0.25)"
-                tick={{ fontSize: 11, fill: '#A4A09B' }}
-                allowDecimals={false}
-              />
-              <YAxis
-                dataKey="name"
-                type="category"
-                stroke="rgba(58,56,53,0.25)"
-                tick={{ fontSize: 11, fill: '#706D69' }}
-                width={48}
-              />
-              <Tooltip contentStyle={tooltipStyle} />
-              <Bar dataKey="count" radius={[0, 6, 6, 0]} name="次數">
-                {emotionFreq.map((_, i) => (
-                  <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </StatCard>
-      )}
-
-      {/* Theme Pie */}
-      {themeFreq.length > 0 && (
-        <StatCard title="夢境主題分佈" icon="🎯">
-          <div className="flex flex-col sm:flex-row items-center gap-6">
-            <div className="w-44 h-44 shrink-0">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={themeFreq}
-                    dataKey="value"
-                    nameKey="name"
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={66}
-                    strokeWidth={0}
-                  >
-                    {themeFreq.map((_, i) => (
-                      <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip contentStyle={tooltipStyle} />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="flex flex-wrap gap-x-4 gap-y-2">
-              {themeFreq.map((t, i) => (
-                <div key={t.name} className="flex items-center gap-2 text-xs">
-                  <div
-                    className="w-2.5 h-2.5 rounded-full shrink-0"
-                    style={{ background: COLORS[i % COLORS.length] }}
-                  />
-                  <span className="text-morandi-muted">{t.name}</span>
-                  <span className="text-morandi-subtle">×{t.value}</span>
+        <Section title="常見情緒">
+          <div className="space-y-4">
+            {emotionFreq.map(e => (
+              <div key={e.name}>
+                <div className="flex justify-between items-center mb-1.5">
+                  <span className="text-morandi-text text-sm">{e.name}</span>
+                  <span className="text-morandi-muted text-xs">{e.count} 次</span>
                 </div>
-              ))}
-            </div>
-          </div>
-        </StatCard>
-      )}
-
-      {/* Symbol Ranking */}
-      {symbolFreq.length > 0 && (
-        <StatCard title="象徵元素排行" icon="🌟">
-          <div className="space-y-2.5">
-            {symbolFreq.map((s, i) => (
-              <div key={s.name} className="flex items-center gap-3">
-                <span className="text-morandi-subtle text-xs w-4 text-right shrink-0">{i + 1}</span>
-                <div className="flex-1 flex items-center gap-3">
-                  <span className="text-morandi-muted text-xs w-16 shrink-0">{s.name}</span>
-                  <div className="flex-1 h-1.5 rounded-full bg-morandi-border overflow-hidden">
-                    <div
-                      className="h-full rounded-full transition-all"
-                      style={{
-                        width: `${(s.count / symbolFreq[0].count) * 100}%`,
-                        background: COLORS[i % COLORS.length],
-                      }}
-                    />
-                  </div>
-                  <span className="text-morandi-subtle text-xs shrink-0">×{s.count}</span>
+                <div className="h-2 bg-morandi-bg rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-morandi-accent rounded-full transition-all duration-500"
+                    style={{ width: `${(e.count / maxEmotion) * 100}%` }}
+                  />
                 </div>
               </div>
             ))}
           </div>
-        </StatCard>
+        </Section>
+      )}
+
+      {/* Symbol frequency */}
+      {symbolFreq.length > 0 && (
+        <Section title="常見象徵元素">
+          <div className="divide-y divide-morandi-border">
+            {symbolFreq.map((s, i) => (
+              <div key={s.name} className="flex items-center justify-between py-2.5 first:pt-0 last:pb-0">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-morandi-surface2 border border-morandi-border flex items-center justify-center text-morandi-muted text-xs font-medium shrink-0">
+                    {i + 1}
+                  </div>
+                  <span className="text-morandi-text text-sm">{s.name}</span>
+                </div>
+                <span className="text-xs px-2.5 py-1 bg-morandi-warm text-morandi-accent rounded-full font-medium border border-morandi-accent/20">
+                  {s.count} 次
+                </span>
+              </div>
+            ))}
+          </div>
+        </Section>
       )}
     </div>
   );
 }
 
-function StatCard({ title, icon, children }: { title: string; icon: string; children: React.ReactNode }) {
+function StatCard({ value, label, accent }: { value: string; label: string; accent?: boolean }) {
   return (
-    <div className="rounded-2xl bg-morandi-surface border border-morandi-border p-5 shadow-morandi">
-      <h2 className="text-xs font-medium text-morandi-subtle mb-4 flex items-center gap-2 uppercase tracking-wider">
-        <span className="text-base">{icon}</span>
-        {title}
-      </h2>
+    <div className="bg-morandi-surface rounded-2xl p-3 border border-morandi-border shadow-morandi text-center">
+      <div className={`text-xl font-bold ${accent ? 'text-morandi-accent' : 'text-morandi-text'}`}>
+        {value}
+      </div>
+      <div className="text-morandi-subtle text-xs mt-0.5">{label}</div>
+    </div>
+  );
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="bg-morandi-surface rounded-2xl p-4 border border-morandi-border shadow-morandi">
+      <h2 className="text-morandi-text text-sm font-semibold mb-4">{title}</h2>
       {children}
     </div>
   );

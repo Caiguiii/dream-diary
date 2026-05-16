@@ -5,12 +5,22 @@ import { apiAnalyzeDream, isApiConfigured } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import type { Dream, Clarity } from '../types';
 
-const MOODS = ['😊 愉快', '😌 平靜', '😨 害怕', '😰 緊張', '😢 悲傷', '😲 驚訝', '😐 茫然'];
+const MOODS = [
+  { emoji: '😊', label: '愉快' },
+  { emoji: '😌', label: '平靜' },
+  { emoji: '😨', label: '害怕' },
+  { emoji: '😰', label: '緊張' },
+  { emoji: '😢', label: '悲傷' },
+  { emoji: '😲', label: '驚訝' },
+  { emoji: '😐', label: '茫然' },
+];
+
 const CLARITY_OPTIONS: { value: Clarity; label: string }[] = [
   { value: 'fuzzy', label: '模糊' },
   { value: 'normal', label: '普通' },
   { value: 'clear', label: '清晰' },
 ];
+
 const DREAM_TYPES = ['日常', '奇幻', '驚悚', '懷舊', '浪漫', '冒險', '靈異', '其他'];
 
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
@@ -62,93 +72,105 @@ export default function InputPage() {
   };
 
   return (
-    <div className="py-10">
-      <div className="text-center mb-10">
-        <div className="text-4xl mb-4">🌙</div>
-        <h1 className="text-2xl font-semibold text-morandi-text mb-2 tracking-tight">
-          記錄你的夢境
-        </h1>
-        <p className="text-morandi-muted text-sm">
-          將昨晚的夢境告訴我，AI 將以周公解夢為你深度解析
-        </p>
+    <div className="py-4">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-morandi-text">記錄你的夢境</h1>
+        <p className="text-morandi-muted text-sm mt-1">寫下你的夢境，讓 AI 為你解析</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-5">
-        <Field label="夢境標題">
-          <input
-            type="text"
-            value={form.title}
-            onChange={e => set('title', e.target.value)}
-            placeholder="為這個夢境命名..."
-            className={inputClass}
-          />
-        </Field>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <input
+          type="text"
+          value={form.title}
+          onChange={e => set('title', e.target.value)}
+          placeholder="夢境標題..."
+          className={inputClass}
+        />
 
-        <Field label="做夢日期">
+        <textarea
+          value={form.content}
+          onChange={e => set('content', e.target.value)}
+          placeholder="描述你的夢境內容..."
+          rows={6}
+          className={`${inputClass} resize-none`}
+          required
+        />
+
+        {/* Date + Clarity row */}
+        <div className="flex gap-2">
           <input
             type="date"
             value={form.date}
             onChange={e => set('date', e.target.value)}
-            className={inputClass}
+            className={`${inputClass} flex-1`}
           />
-        </Field>
-
-        <Field label="夢境內容" required>
-          <textarea
-            value={form.content}
-            onChange={e => set('content', e.target.value)}
-            placeholder="詳細描述你的夢境內容，越詳細 AI 分析越準確..."
-            rows={8}
-            className={`${inputClass} resize-none`}
-            required
-          />
-        </Field>
-
-        <Field label="醒來後心情">
-          <div className="flex flex-wrap gap-2">
-            {MOODS.map(mood => (
-              <ToggleBtn
-                key={mood}
-                active={form.mood === mood}
-                onClick={() => set('mood', form.mood === mood ? '' : mood)}
-              >
-                {mood}
-              </ToggleBtn>
-            ))}
-          </div>
-        </Field>
-
-        <Field label="夢境清晰度">
-          <div className="flex gap-2">
+          <div className="flex gap-1">
             {CLARITY_OPTIONS.map(c => (
-              <ToggleBtn
+              <button
                 key={c.value}
-                active={form.clarity === c.value}
+                type="button"
                 onClick={() => set('clarity', c.value)}
-                className="flex-1 justify-center"
+                className={`px-3 py-3 rounded-2xl text-sm transition-all ${
+                  form.clarity === c.value
+                    ? 'bg-morandi-accent text-white font-medium'
+                    : 'bg-morandi-surface text-morandi-muted border border-morandi-border'
+                }`}
               >
                 {c.label}
-              </ToggleBtn>
+              </button>
             ))}
           </div>
-        </Field>
+        </div>
 
-        <Field label="夢境類型">
+        {/* Mood — circular emoji buttons */}
+        <div>
+          <label className="block text-morandi-text text-sm font-medium mb-3">心情</label>
+          <div className="flex gap-2 flex-wrap">
+            {MOODS.map(m => {
+              const val = `${m.emoji} ${m.label}`;
+              const active = form.mood === val;
+              return (
+                <button
+                  key={m.emoji}
+                  type="button"
+                  onClick={() => set('mood', active ? '' : val)}
+                  title={m.label}
+                  className={`w-11 h-11 rounded-full text-xl flex items-center justify-center transition-all ${
+                    active
+                      ? 'bg-morandi-accent ring-2 ring-morandi-accent ring-offset-2 ring-offset-morandi-bg'
+                      : 'bg-morandi-surface border border-morandi-border hover:border-morandi-accent/50'
+                  }`}
+                >
+                  {m.emoji}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Dream type — pill chips */}
+        <div>
+          <label className="block text-morandi-text text-sm font-medium mb-3">夢境類型</label>
           <div className="flex flex-wrap gap-2">
             {DREAM_TYPES.map(type => (
-              <ToggleBtn
+              <button
                 key={type}
-                active={form.dreamType === type}
+                type="button"
                 onClick={() => set('dreamType', form.dreamType === type ? '' : type)}
+                className={`px-4 py-2 rounded-full text-sm transition-all ${
+                  form.dreamType === type
+                    ? 'bg-morandi-accent text-white font-medium'
+                    : 'bg-morandi-surface text-morandi-muted border border-morandi-border hover:border-morandi-accent/50'
+                }`}
               >
                 {type}
-              </ToggleBtn>
+              </button>
             ))}
           </div>
-        </Field>
+        </div>
 
         {error && (
-          <div className="bg-morandi-error/8 border border-morandi-error/25 rounded-2xl p-4 text-morandi-error text-sm">
+          <div className="bg-morandi-error/10 border border-morandi-error/25 rounded-2xl p-3 text-morandi-error text-sm">
             {error}
           </div>
         )}
@@ -156,13 +178,13 @@ export default function InputPage() {
         <button
           type="submit"
           disabled={loading || !form.content.trim()}
-          className="w-full py-3.5 rounded-2xl bg-morandi-text text-white font-medium text-base disabled:opacity-35 hover:bg-morandi-text/90 transition-all shadow-morandi"
+          className="w-full py-4 rounded-full bg-morandi-accent text-white font-semibold text-base disabled:opacity-40 hover:bg-morandi-accent/90 transition-all shadow-morandi active:scale-[0.98]"
         >
           {loading ? (
             <span className="flex items-center justify-center gap-2">
               <Spinner /> AI 正在解析夢境...
             </span>
-          ) : needsLogin ? '請先登入才能分析' : '送出分析'}
+          ) : needsLogin ? '請先登入才能分析' : 'AI 分析夢境'}
         </button>
       </form>
     </div>
@@ -183,39 +205,6 @@ async function localAnalyze(form: object) {
   return data.analysis;
 }
 
-function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
-  return (
-    <div>
-      <label className="block text-morandi-text text-sm font-medium mb-2">
-        {label}
-        {required && <span className="text-morandi-error ml-1">*</span>}
-      </label>
-      {children}
-    </div>
-  );
-}
-
-function ToggleBtn({ active, onClick, className = '', children }: {
-  active: boolean;
-  onClick: () => void;
-  className?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`px-3 py-2 rounded-xl text-sm transition-all flex items-center border ${className} ${
-        active
-          ? 'bg-morandi-purple/15 text-morandi-purple border-morandi-purple/30 font-medium'
-          : 'bg-morandi-surface text-morandi-muted border-morandi-border hover:border-morandi-purple/30 hover:text-morandi-text'
-      }`}
-    >
-      {children}
-    </button>
-  );
-}
-
 function Spinner() {
   return (
     <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
@@ -226,4 +215,4 @@ function Spinner() {
 }
 
 const inputClass =
-  'w-full bg-morandi-surface border border-morandi-border rounded-2xl px-4 py-3 text-morandi-text placeholder-morandi-subtle focus:outline-none focus:border-morandi-purple/40 focus:ring-2 focus:ring-morandi-purple/8 transition-all';
+  'w-full bg-morandi-surface border border-morandi-border rounded-2xl px-4 py-3 text-morandi-text placeholder-morandi-subtle focus:outline-none focus:border-morandi-accent/50 focus:ring-2 focus:ring-morandi-accent/10 transition-all shadow-morandi';

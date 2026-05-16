@@ -3,25 +3,28 @@ import { useNavigate } from 'react-router-dom';
 import { getDreams, deleteDream } from '../utils/storage';
 import type { Dream } from '../types';
 
+const DREAM_TYPES = ['日常', '奇幻', '驚悚', '懷舊', '浪漫', '冒險', '靈異', '其他'];
 const CLARITY_LABEL = { fuzzy: '模糊', normal: '普通', clear: '清晰' };
 
 export default function DiaryPage() {
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
+  const [typeFilter, setTypeFilter] = useState('全部');
   const [dreams, setDreams] = useState<Dream[]>(() => getDreams());
 
   const reload = () => setDreams(getDreams());
 
   const filtered = dreams.filter(d => {
     const q = query.toLowerCase();
-    return (
+    const matchesQuery =
       !q ||
       d.title.toLowerCase().includes(q) ||
       d.content.toLowerCase().includes(q) ||
       d.mood.toLowerCase().includes(q) ||
       (d.analysis?.themes.some(t => t.includes(q)) ?? false) ||
-      (d.analysis?.keywords.some(k => k.toLowerCase().includes(q)) ?? false)
-    );
+      (d.analysis?.keywords.some(k => k.toLowerCase().includes(q)) ?? false);
+    const matchesType = typeFilter === '全部' || d.dreamType === typeFilter;
+    return matchesQuery && matchesType;
   });
 
   const handleDelete = (e: React.MouseEvent, id: string) => {
@@ -33,36 +36,62 @@ export default function DiaryPage() {
   };
 
   return (
-    <div className="py-8">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-xl font-semibold text-morandi-text">夢境日記</h1>
-        <span className="text-morandi-subtle text-xs">{filtered.length} 則夢境</span>
+    <div className="py-4">
+      {/* Header */}
+      <div className="mb-5">
+        <h1 className="text-2xl font-bold text-morandi-text">夢境日記</h1>
+        <p className="text-morandi-muted text-sm mt-1">回顧你的每一場夢</p>
       </div>
 
       {/* Search */}
-      <div className="relative mb-6">
-        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-morandi-subtle text-sm">
-          🔍
-        </span>
+      <div className="relative mb-4">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-morandi-subtle"
+        >
+          <circle cx="11" cy="11" r="8" />
+          <path d="M21 21l-4.35-4.35" />
+        </svg>
         <input
           type="text"
           value={query}
           onChange={e => setQuery(e.target.value)}
-          placeholder="搜尋夢境內容、情緒、主題..."
-          className="w-full bg-morandi-surface border border-morandi-border rounded-2xl pl-10 pr-4 py-3 text-sm text-morandi-text placeholder-morandi-subtle focus:outline-none focus:border-morandi-purple/40 focus:ring-2 focus:ring-morandi-purple/8 transition-all shadow-morandi"
+          placeholder="搜尋夢境..."
+          className="w-full bg-morandi-surface border border-morandi-border rounded-2xl pl-10 pr-4 py-3 text-sm text-morandi-text placeholder-morandi-subtle focus:outline-none focus:border-morandi-accent/50 focus:ring-2 focus:ring-morandi-accent/10 transition-all shadow-morandi"
         />
       </div>
 
+      {/* Type filter chips — scrollable */}
+      <div className="flex gap-2 overflow-x-auto pb-2 mb-4 scrollbar-none">
+        {['全部', ...DREAM_TYPES].map(type => (
+          <button
+            key={type}
+            onClick={() => setTypeFilter(type)}
+            className={`shrink-0 px-4 py-1.5 rounded-full text-sm transition-all ${
+              typeFilter === type
+                ? 'bg-morandi-accent text-white font-medium'
+                : 'bg-morandi-surface text-morandi-muted border border-morandi-border hover:border-morandi-accent/50'
+            }`}
+          >
+            {type}
+          </button>
+        ))}
+      </div>
+
       {filtered.length === 0 ? (
-        <div className="text-center py-20 text-morandi-subtle">
+        <div className="text-center py-16">
           <div className="text-4xl mb-3">🌌</div>
           <p className="text-morandi-muted text-sm">
-            {query ? '找不到符合的夢境' : '還沒有任何夢境記錄'}
+            {query || typeFilter !== '全部' ? '找不到符合的夢境' : '還沒有任何夢境記錄'}
           </p>
-          {!query && (
+          {!query && typeFilter === '全部' && (
             <button
               onClick={() => navigate('/')}
-              className="mt-5 px-6 py-2.5 rounded-2xl bg-morandi-text text-white text-sm font-medium hover:bg-morandi-text/90 transition-all shadow-morandi"
+              className="mt-5 px-6 py-3 rounded-full bg-morandi-accent text-white text-sm font-medium hover:bg-morandi-accent/90 transition-all shadow-morandi"
             >
               記錄第一個夢境
             </button>
@@ -93,47 +122,55 @@ function DreamCard({
   onClick: () => void;
   onDelete: (e: React.MouseEvent) => void;
 }) {
-  const mainEmotion = dream.analysis?.emotions[0]?.name;
-  const firstTheme = dream.analysis?.themes[0];
+  const topEmotions = dream.analysis?.emotions.slice(0, 2) ?? [];
 
   return (
     <div
       onClick={onClick}
-      className="group p-4 rounded-2xl bg-morandi-surface border border-morandi-border hover:border-morandi-purple/30 hover:shadow-morandi-md transition-all cursor-pointer"
+      className="group bg-morandi-surface rounded-2xl p-4 border border-morandi-border shadow-morandi hover:shadow-morandi-md hover:border-morandi-accent/30 transition-all cursor-pointer"
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1.5">
-            <span className="text-morandi-text font-medium text-sm truncate">
-              {dream.title || '無題夢境'}
+      {/* Date + type badge row */}
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-morandi-subtle text-xs">{dream.date}</span>
+        <div className="flex items-center gap-2">
+          {dream.dreamType && (
+            <span className="text-xs px-2.5 py-0.5 rounded-full bg-morandi-accent text-white font-medium">
+              {dream.dreamType}
             </span>
-            {dream.dreamType && (
-              <span className="text-xs px-2 py-0.5 rounded-full bg-morandi-purple/10 text-morandi-purple border border-morandi-purple/15 shrink-0">
-                {dream.dreamType}
-              </span>
-            )}
-          </div>
-          <p className="text-morandi-subtle text-xs line-clamp-2 mb-2.5 leading-relaxed">
-            {dream.content}
-          </p>
-          <div className="flex flex-wrap gap-2 text-xs text-morandi-subtle">
-            <span>{dream.date}</span>
-            {dream.mood && <span>{dream.mood}</span>}
-            <span>{CLARITY_LABEL[dream.clarity]}</span>
-            {mainEmotion && (
-              <span className="text-morandi-purple">● {mainEmotion}</span>
-            )}
-            {firstTheme && (
-              <span className="text-morandi-blue">#{firstTheme}</span>
-            )}
-          </div>
+          )}
+          <button
+            onClick={onDelete}
+            className="opacity-0 group-hover:opacity-100 text-morandi-subtle hover:text-morandi-error text-xs transition-all px-1.5 py-0.5 rounded hover:bg-morandi-error/8"
+          >
+            ✕
+          </button>
         </div>
-        <button
-          onClick={onDelete}
-          className="opacity-0 group-hover:opacity-100 text-morandi-subtle hover:text-morandi-error text-xs transition-all shrink-0 pt-0.5 px-2 py-1 rounded-lg hover:bg-morandi-error/8"
-        >
-          刪除
-        </button>
+      </div>
+
+      {/* Title */}
+      <p className="text-morandi-text font-semibold text-sm mb-1.5 truncate">
+        {dream.title || '無題夢境'}
+      </p>
+
+      {/* Content preview */}
+      <p className="text-morandi-subtle text-xs line-clamp-2 leading-relaxed mb-3">
+        {dream.content}
+      </p>
+
+      {/* Bottom: mood + clarity + emotion tags */}
+      <div className="flex items-center gap-2 flex-wrap">
+        {dream.mood && (
+          <span className="text-xs">{dream.mood.split(' ')[0]}</span>
+        )}
+        <span className="text-morandi-subtle text-xs">{CLARITY_LABEL[dream.clarity]}</span>
+        {topEmotions.map(em => (
+          <span
+            key={em.name}
+            className="text-xs px-2.5 py-0.5 rounded-full bg-morandi-warm text-morandi-accent border border-morandi-accent/20"
+          >
+            {em.name}
+          </span>
+        ))}
       </div>
     </div>
   );

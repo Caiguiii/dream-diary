@@ -38,7 +38,7 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <div className="text-4xl mb-4">🌙</div>
-          <h1 className="text-xl font-semibold text-morandi-text">
+          <h1 className="text-xl font-bold text-morandi-text">
             {step === 'register' ? '建立帳號' : '登入夢境日記'}
           </h1>
           <p className="text-morandi-subtle text-xs mt-1.5">
@@ -73,7 +73,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 rounded-2xl bg-morandi-text text-white text-sm font-medium disabled:opacity-35 hover:bg-morandi-text/90 transition-all mt-1"
+              className="w-full py-3.5 rounded-full bg-morandi-accent text-white text-sm font-semibold disabled:opacity-40 hover:bg-morandi-accent/90 transition-all mt-1 shadow-morandi"
             >
               {loading ? '處理中...' : step === 'login' ? '登入' : '建立帳號'}
             </button>
@@ -83,7 +83,7 @@ export default function LoginPage() {
             {step === 'login' ? '還沒有帳號？' : '已有帳號？'}
             <button
               onClick={() => { setStep(step === 'login' ? 'register' : 'login'); setError(''); }}
-              className="text-morandi-purple hover:text-morandi-purple/80 ml-1 transition-colors"
+              className="text-morandi-accent hover:text-morandi-accent/80 ml-1 transition-colors"
             >
               {step === 'login' ? '免費註冊' : '前往登入'}
             </button>
@@ -103,4 +103,4 @@ function friendlyError(err: unknown): string {
 }
 
 const inputClass =
-  'w-full bg-morandi-bg border border-morandi-border rounded-2xl px-4 py-3 text-sm text-morandi-text placeholder-morandi-subtle focus:outline-none focus:border-morandi-purple/40 focus:ring-2 focus:ring-morandi-purple/8 transition-all';
+  'w-full bg-morandi-bg border border-morandi-border rounded-2xl px-4 py-3 text-sm text-morandi-text placeholder-morandi-subtle focus:outline-none focus:border-morandi-accent/50 focus:ring-2 focus:ring-morandi-accent/10 transition-all';

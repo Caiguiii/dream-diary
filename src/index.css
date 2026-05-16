@@ -7,26 +7,22 @@
 }
 
 body {
-  background-color: #F2F0EC;
+  background-color: #EDE8DE;
   min-height: 100vh;
-  color: #3A3835;
-  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  color: #2C2825;
+  font-family: -apple-system, system-ui, 'Segoe UI', sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
-/* Custom scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 4px;
 }
 ::-webkit-scrollbar-track {
-  background: #F2F0EC;
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #C8C3BC;
-  border-radius: 3px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #A4A09B;
+  background: #C8C0B4;
+  border-radius: 2px;
 }
 
 input[type="date"]::-webkit-calendar-picker-indicator {
