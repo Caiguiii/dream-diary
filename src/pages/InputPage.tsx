@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { saveDream } from '../utils/storage';
+import { apiAnalyzeDream, isApiConfigured } from '../utils/api';
+import { useAuth } from '../context/AuthContext';
 import type { Dream, Clarity } from '../types';
 
 const MOODS = ['😊 愉快', '😌 平靜', '😨 害怕', '😰 緊張', '😢 悲傷', '😲 驚訝', '😐 茫然'];
@@ -15,6 +17,7 @@ const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 
 
 export default function InputPage() {
   const navigate = useNavigate();
+  const { isLoggedIn, isCognitoConfigured } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [form, setForm] = useState({
@@ -29,26 +32,27 @@ export default function InputPage() {
   const set = <K extends keyof typeof form>(key: K, value: (typeof form)[K]) =>
     setForm(f => ({ ...f, [key]: value }));
 
+  const needsLogin = isCognitoConfigured && !isLoggedIn;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.content.trim()) return;
+    if (needsLogin) { setError('請先登入才能使用 AI 分析'); return; }
+
     setLoading(true);
     setError('');
     try {
-      const res = await fetch('/api/analyze', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
-      });
-      const data = await res.json();
-      if (!data.success) throw new Error(data.error || '分析失敗');
+      const analysis = isApiConfigured()
+        ? await apiAnalyzeDream(form)
+        : await localAnalyze(form);
+
       const dream: Dream = {
         id: uid(),
         ...form,
-        analysis: data.analysis,
+        analysis,
         createdAt: new Date().toISOString(),
       };
-      saveDream(dream);
+      await saveDream(dream);
       navigate(`/analysis/${dream.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : '分析失敗，請稍後再試');
@@ -58,17 +62,18 @@ export default function InputPage() {
   };
 
   return (
-    <div className="py-8">
+    <div className="py-10">
       <div className="text-center mb-10">
-        <div className="text-5xl mb-3">🌙</div>
-        <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-300 to-purple-300 bg-clip-text text-transparent mb-2">
+        <div className="text-4xl mb-4">🌙</div>
+        <h1 className="text-2xl font-semibold text-morandi-text mb-2 tracking-tight">
           記錄你的夢境
         </h1>
-        <p className="text-white/50 text-sm">將昨晚的夢境告訴我，AI 將以周公解夢為你深度解析</p>
+        <p className="text-morandi-muted text-sm">
+          將昨晚的夢境告訴我，AI 將以周公解夢為你深度解析
+        </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* 標題 */}
+      <form onSubmit={handleSubmit} className="space-y-5">
         <Field label="夢境標題">
           <input
             type="text"
@@ -79,7 +84,6 @@ export default function InputPage() {
           />
         </Field>
 
-        {/* 日期 */}
         <Field label="做夢日期">
           <input
             type="date"
@@ -89,7 +93,6 @@ export default function InputPage() {
           />
         </Field>
 
-        {/* 內容 */}
         <Field label="夢境內容" required>
           <textarea
             value={form.content}
@@ -101,7 +104,6 @@ export default function InputPage() {
           />
         </Field>
 
-        {/* 心情 */}
         <Field label="醒來後心情">
           <div className="flex flex-wrap gap-2">
             {MOODS.map(mood => (
@@ -109,7 +111,6 @@ export default function InputPage() {
                 key={mood}
                 active={form.mood === mood}
                 onClick={() => set('mood', form.mood === mood ? '' : mood)}
-                color="purple"
               >
                 {mood}
               </ToggleBtn>
@@ -117,15 +118,13 @@ export default function InputPage() {
           </div>
         </Field>
 
-        {/* 清晰度 */}
         <Field label="夢境清晰度">
-          <div className="flex gap-3">
+          <div className="flex gap-2">
             {CLARITY_OPTIONS.map(c => (
               <ToggleBtn
                 key={c.value}
                 active={form.clarity === c.value}
                 onClick={() => set('clarity', c.value)}
-                color="blue"
                 className="flex-1 justify-center"
               >
                 {c.label}
@@ -134,7 +133,6 @@ export default function InputPage() {
           </div>
         </Field>
 
-        {/* 類型 */}
         <Field label="夢境類型">
           <div className="flex flex-wrap gap-2">
             {DREAM_TYPES.map(type => (
@@ -142,7 +140,6 @@ export default function InputPage() {
                 key={type}
                 active={form.dreamType === type}
                 onClick={() => set('dreamType', form.dreamType === type ? '' : type)}
-                color="indigo"
               >
                 {type}
               </ToggleBtn>
@@ -151,57 +148,67 @@ export default function InputPage() {
         </Field>
 
         {error && (
-          <div className="bg-red-500/20 border border-red-500/40 rounded-xl p-4 text-red-300 text-sm">
-            ⚠️ {error}
+          <div className="bg-morandi-error/8 border border-morandi-error/25 rounded-2xl p-4 text-morandi-error text-sm">
+            {error}
           </div>
         )}
 
         <button
           type="submit"
           disabled={loading || !form.content.trim()}
-          className="w-full py-4 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold text-lg disabled:opacity-40 hover:from-blue-500 hover:to-purple-500 transition-all shadow-lg shadow-purple-900/40"
+          className="w-full py-3.5 rounded-2xl bg-morandi-text text-white font-medium text-base disabled:opacity-35 hover:bg-morandi-text/90 transition-all shadow-morandi"
         >
           {loading ? (
             <span className="flex items-center justify-center gap-2">
               <Spinner /> AI 正在解析夢境...
             </span>
-          ) : (
-            '🔮 送出分析'
-          )}
+          ) : needsLogin ? '請先登入才能分析' : '送出分析'}
         </button>
       </form>
     </div>
   );
 }
 
+async function localAnalyze(form: object) {
+  const res = await fetch('/api/analyze', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(form),
+  });
+  const ct = res.headers.get('content-type') ?? '';
+  if (!ct.includes('application/json'))
+    throw new Error('無法連線到本機 Ollama，請確認已執行 npm run dev');
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error || '分析失敗');
+  return data.analysis;
+}
+
 function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-blue-200 text-sm mb-2">
+      <label className="block text-morandi-text text-sm font-medium mb-2">
         {label}
-        {required && <span className="text-red-400 ml-1">*</span>}
+        {required && <span className="text-morandi-error ml-1">*</span>}
       </label>
       {children}
     </div>
   );
 }
 
-function ToggleBtn({
-  active, onClick, color, className = '', children,
-}: {
-  active: boolean; onClick: () => void; color: 'purple' | 'blue' | 'indigo'; className?: string; children: React.ReactNode;
+function ToggleBtn({ active, onClick, className = '', children }: {
+  active: boolean;
+  onClick: () => void;
+  className?: string;
+  children: React.ReactNode;
 }) {
-  const colors = {
-    purple: 'bg-purple-600 text-white',
-    blue: 'bg-blue-600 text-white',
-    indigo: 'bg-indigo-600 text-white',
-  };
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`px-3 py-2 rounded-lg text-sm transition flex items-center ${className} ${
-        active ? colors[color] : 'bg-white/5 text-white/60 hover:bg-white/10'
+      className={`px-3 py-2 rounded-xl text-sm transition-all flex items-center border ${className} ${
+        active
+          ? 'bg-morandi-purple/15 text-morandi-purple border-morandi-purple/30 font-medium'
+          : 'bg-morandi-surface text-morandi-muted border-morandi-border hover:border-morandi-purple/30 hover:text-morandi-text'
       }`}
     >
       {children}
@@ -211,7 +218,7 @@ function ToggleBtn({
 
 function Spinner() {
   return (
-    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24" fill="none">
+    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
     </svg>
@@ -219,4 +226,4 @@ function Spinner() {
 }
 
 const inputClass =
-  'w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-purple-500 transition';
+  'w-full bg-morandi-surface border border-morandi-border rounded-2xl px-4 py-3 text-morandi-text placeholder-morandi-subtle focus:outline-none focus:border-morandi-purple/40 focus:ring-2 focus:ring-morandi-purple/8 transition-all';

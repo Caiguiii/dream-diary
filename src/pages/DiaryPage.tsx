@@ -35,32 +35,34 @@ export default function DiaryPage() {
   return (
     <div className="py-8">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-300 to-purple-300 bg-clip-text text-transparent">
-          夢境日記
-        </h1>
-        <span className="text-white/40 text-sm">{filtered.length} 則夢境</span>
+        <h1 className="text-xl font-semibold text-morandi-text">夢境日記</h1>
+        <span className="text-morandi-subtle text-xs">{filtered.length} 則夢境</span>
       </div>
 
       {/* Search */}
       <div className="relative mb-6">
-        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30">🔍</span>
+        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-morandi-subtle text-sm">
+          🔍
+        </span>
         <input
           type="text"
           value={query}
           onChange={e => setQuery(e.target.value)}
           placeholder="搜尋夢境內容、情緒、主題..."
-          className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-purple-500 transition"
+          className="w-full bg-morandi-surface border border-morandi-border rounded-2xl pl-10 pr-4 py-3 text-sm text-morandi-text placeholder-morandi-subtle focus:outline-none focus:border-morandi-purple/40 focus:ring-2 focus:ring-morandi-purple/8 transition-all shadow-morandi"
         />
       </div>
 
       {filtered.length === 0 ? (
-        <div className="text-center py-20 text-white/40">
+        <div className="text-center py-20 text-morandi-subtle">
           <div className="text-4xl mb-3">🌌</div>
-          <p>{query ? '找不到符合的夢境' : '還沒有任何夢境記錄'}</p>
+          <p className="text-morandi-muted text-sm">
+            {query ? '找不到符合的夢境' : '還沒有任何夢境記錄'}
+          </p>
           {!query && (
             <button
               onClick={() => navigate('/')}
-              className="mt-4 px-6 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white text-sm hover:from-blue-500 hover:to-purple-500 transition"
+              className="mt-5 px-6 py-2.5 rounded-2xl bg-morandi-text text-white text-sm font-medium hover:bg-morandi-text/90 transition-all shadow-morandi"
             >
               記錄第一個夢境
             </button>
@@ -83,7 +85,9 @@ export default function DiaryPage() {
 }
 
 function DreamCard({
-  dream, onClick, onDelete,
+  dream,
+  onClick,
+  onDelete,
 }: {
   dream: Dream;
   onClick: () => void;
@@ -95,30 +99,38 @@ function DreamCard({
   return (
     <div
       onClick={onClick}
-      className="group p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-purple-500/30 transition cursor-pointer"
+      className="group p-4 rounded-2xl bg-morandi-surface border border-morandi-border hover:border-morandi-purple/30 hover:shadow-morandi-md transition-all cursor-pointer"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-white font-medium truncate">{dream.title || '無題夢境'}</span>
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="text-morandi-text font-medium text-sm truncate">
+              {dream.title || '無題夢境'}
+            </span>
             {dream.dreamType && (
-              <span className="text-xs px-2 py-0.5 rounded-full bg-indigo-600/30 text-indigo-300 shrink-0">
+              <span className="text-xs px-2 py-0.5 rounded-full bg-morandi-purple/10 text-morandi-purple border border-morandi-purple/15 shrink-0">
                 {dream.dreamType}
               </span>
             )}
           </div>
-          <p className="text-white/40 text-sm line-clamp-2 mb-2">{dream.content}</p>
-          <div className="flex flex-wrap gap-2 text-xs text-white/40">
-            <span>📅 {dream.date}</span>
+          <p className="text-morandi-subtle text-xs line-clamp-2 mb-2.5 leading-relaxed">
+            {dream.content}
+          </p>
+          <div className="flex flex-wrap gap-2 text-xs text-morandi-subtle">
+            <span>{dream.date}</span>
             {dream.mood && <span>{dream.mood}</span>}
-            <span>👁️ {CLARITY_LABEL[dream.clarity]}</span>
-            {mainEmotion && <span className="text-purple-300">● {mainEmotion}</span>}
-            {firstTheme && <span className="text-blue-300">#{firstTheme}</span>}
+            <span>{CLARITY_LABEL[dream.clarity]}</span>
+            {mainEmotion && (
+              <span className="text-morandi-purple">● {mainEmotion}</span>
+            )}
+            {firstTheme && (
+              <span className="text-morandi-blue">#{firstTheme}</span>
+            )}
           </div>
         </div>
         <button
           onClick={onDelete}
-          className="opacity-0 group-hover:opacity-100 text-red-400/60 hover:text-red-400 text-xs transition shrink-0 pt-1"
+          className="opacity-0 group-hover:opacity-100 text-morandi-subtle hover:text-morandi-error text-xs transition-all shrink-0 pt-0.5 px-2 py-1 rounded-lg hover:bg-morandi-error/8"
         >
           刪除
         </button>

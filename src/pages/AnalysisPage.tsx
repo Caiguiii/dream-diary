@@ -2,8 +2,17 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { getDream, deleteDream } from '../utils/storage';
 
-const EMOTION_COLORS = ['#7c3aed', '#2563eb', '#0891b2', '#059669', '#d97706', '#dc2626', '#db2777'];
+const EMOTION_COLORS = ['#8EA8B8', '#8FAF9A', '#BFA07A', '#9B8FAA', '#B8A0A0', '#8AB0A8', '#C0B090'];
 const CLARITY_LABEL = { fuzzy: '模糊', normal: '普通', clear: '清晰' };
+
+const tooltipStyle = {
+  background: '#FAFAF8',
+  border: '1px solid #E0DCD7',
+  borderRadius: '12px',
+  color: '#3A3835',
+  boxShadow: '0 4px 16px rgba(58,56,53,0.08)',
+  fontSize: '13px',
+};
 
 export default function AnalysisPage() {
   const { id } = useParams<{ id: string }>();
@@ -12,10 +21,10 @@ export default function AnalysisPage() {
 
   if (!dream) {
     return (
-      <div className="py-20 text-center text-white/50">
+      <div className="py-20 text-center text-morandi-subtle">
         <div className="text-4xl mb-4">😶‍🌫️</div>
-        <p>找不到這個夢境紀錄</p>
-        <button onClick={() => navigate('/')} className={btnClass}>
+        <p className="text-morandi-muted">找不到這個夢境紀錄</p>
+        <button onClick={() => navigate('/')} className={btnClass + ' mt-6 inline-block'}>
           回首頁
         </button>
       </div>
@@ -32,46 +41,57 @@ export default function AnalysisPage() {
   };
 
   return (
-    <div className="py-8 space-y-6">
+    <div className="py-8 space-y-5">
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
           <button
             onClick={() => navigate('/diary')}
-            className="text-white/40 hover:text-white/70 text-sm mb-2 flex items-center gap-1 transition"
+            className="text-morandi-subtle hover:text-morandi-muted text-sm mb-3 flex items-center gap-1 transition-colors"
           >
             ← 返回日記
           </button>
-          <h1 className="text-2xl font-bold text-white">{dream.title || '無題夢境'}</h1>
-          <div className="flex flex-wrap gap-2 mt-2 text-sm text-white/50">
-            <span>📅 {dream.date}</span>
+          <h1 className="text-xl font-semibold text-morandi-text">{dream.title || '無題夢境'}</h1>
+          <div className="flex flex-wrap gap-3 mt-2 text-xs text-morandi-subtle">
+            <span>{dream.date}</span>
             {dream.mood && <span>{dream.mood}</span>}
-            {dream.dreamType && <span>🏷️ {dream.dreamType}</span>}
-            <span>👁️ {CLARITY_LABEL[dream.clarity]}</span>
+            {dream.dreamType && (
+              <span className="px-2 py-0.5 rounded-full bg-morandi-purple/10 text-morandi-purple border border-morandi-purple/20">
+                {dream.dreamType}
+              </span>
+            )}
+            <span>{CLARITY_LABEL[dream.clarity]}</span>
           </div>
         </div>
-        <button onClick={handleDelete} className="text-red-400/60 hover:text-red-400 text-sm transition shrink-0">
+        <button
+          onClick={handleDelete}
+          className="text-morandi-subtle hover:text-morandi-error text-xs transition-colors shrink-0 px-3 py-1.5 rounded-xl border border-morandi-border hover:border-morandi-error/30 hover:bg-morandi-error/5"
+        >
           刪除
         </button>
       </div>
 
       {/* Original Content */}
       <Card title="夢境內容" icon="📝">
-        <p className="text-white/70 leading-relaxed whitespace-pre-wrap">{dream.content}</p>
+        <p className="text-morandi-muted leading-relaxed whitespace-pre-wrap text-sm">
+          {dream.content}
+        </p>
       </Card>
 
       {!analysis ? (
-        <div className="text-center text-white/40 py-8">尚無分析結果</div>
+        <div className="text-center text-morandi-subtle py-8">尚無分析結果</div>
       ) : (
         <>
           {/* AI Summary */}
-          <Card title="AI 夢境摘要" icon="✨" gradient>
-            <p className="text-white/90 leading-relaxed">{analysis.summary}</p>
+          <Card title="AI 夢境摘要" icon="✨" accent>
+            <p className="text-morandi-text leading-relaxed text-sm">{analysis.summary}</p>
           </Card>
 
           {/* 周公解夢 */}
           <Card title="周公解夢解讀" icon="🔮">
-            <p className="text-white/80 leading-relaxed">{analysis.zhougongInterpretation}</p>
+            <p className="text-morandi-muted leading-relaxed text-sm">
+              {analysis.zhougongInterpretation}
+            </p>
           </Card>
 
           {/* Themes & Keywords */}
@@ -79,7 +99,10 @@ export default function AnalysisPage() {
             <Card title="夢境主題" icon="🎯">
               <div className="flex flex-wrap gap-2">
                 {analysis.themes.map(t => (
-                  <span key={t} className="px-3 py-1 rounded-full bg-purple-600/30 text-purple-200 text-sm">
+                  <span
+                    key={t}
+                    className="px-3 py-1 rounded-full bg-morandi-purple/10 text-morandi-purple border border-morandi-purple/20 text-xs"
+                  >
                     {t}
                   </span>
                 ))}
@@ -88,7 +111,10 @@ export default function AnalysisPage() {
             <Card title="關鍵字" icon="🔑">
               <div className="flex flex-wrap gap-2">
                 {analysis.keywords.map(k => (
-                  <span key={k} className="px-3 py-1 rounded-full bg-blue-600/30 text-blue-200 text-sm">
+                  <span
+                    key={k}
+                    className="px-3 py-1 rounded-full bg-morandi-blue/10 text-morandi-blue border border-morandi-blue/20 text-xs"
+                  >
                     #{k}
                   </span>
                 ))}
@@ -99,7 +125,7 @@ export default function AnalysisPage() {
           {/* Emotions Pie Chart */}
           <Card title="情緒分析" icon="💫">
             <div className="flex flex-col sm:flex-row items-center gap-6">
-              <div className="w-48 h-48 shrink-0">
+              <div className="w-44 h-44 shrink-0">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
@@ -108,8 +134,9 @@ export default function AnalysisPage() {
                       nameKey="name"
                       cx="50%"
                       cy="50%"
-                      innerRadius={40}
-                      outerRadius={70}
+                      innerRadius={38}
+                      outerRadius={64}
+                      strokeWidth={0}
                     >
                       {analysis.emotions.map((_, i) => (
                         <Cell key={i} fill={EMOTION_COLORS[i % EMOTION_COLORS.length]} />
@@ -117,21 +144,21 @@ export default function AnalysisPage() {
                     </Pie>
                     <Tooltip
                       formatter={(val: number) => [`${val}%`, '']}
-                      contentStyle={{ background: '#0d0d38', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: 'white' }}
+                      contentStyle={tooltipStyle}
                     />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
-              <div className="flex flex-wrap gap-3 flex-1">
+              <div className="flex flex-wrap gap-x-4 gap-y-2 flex-1">
                 {analysis.emotions.map((em, i) => (
                   <div key={em.name} className="flex items-center gap-2">
                     <div
-                      className="w-3 h-3 rounded-full shrink-0"
+                      className="w-2.5 h-2.5 rounded-full shrink-0"
                       style={{ background: EMOTION_COLORS[i % EMOTION_COLORS.length] }}
                     />
-                    <span className="text-white/80 text-sm">
+                    <span className="text-morandi-muted text-xs">
                       {em.name}
-                      <span className="text-white/40 ml-1">{em.percentage}%</span>
+                      <span className="text-morandi-subtle ml-1">{em.percentage}%</span>
                     </span>
                   </div>
                 ))}
@@ -141,11 +168,14 @@ export default function AnalysisPage() {
 
           {/* Symbols */}
           <Card title="象徵元素" icon="🌟">
-            <div className="space-y-3">
+            <div className="space-y-2">
               {analysis.symbols.map(s => (
-                <div key={s.symbol} className="flex gap-3 p-3 rounded-lg bg-white/5">
-                  <span className="text-purple-300 font-semibold shrink-0">{s.symbol}</span>
-                  <span className="text-white/60 text-sm">{s.meaning}</span>
+                <div
+                  key={s.symbol}
+                  className="flex gap-3 p-3 rounded-xl bg-morandi-surface2 border border-morandi-border"
+                >
+                  <span className="text-morandi-purple font-medium text-sm shrink-0">{s.symbol}</span>
+                  <span className="text-morandi-muted text-sm">{s.meaning}</span>
                 </div>
               ))}
             </div>
@@ -163,20 +193,26 @@ export default function AnalysisPage() {
 }
 
 function Card({
-  title, icon, gradient, children,
+  title,
+  icon,
+  accent,
+  children,
 }: {
-  title: string; icon: string; gradient?: boolean; children: React.ReactNode;
+  title: string;
+  icon: string;
+  accent?: boolean;
+  children: React.ReactNode;
 }) {
   return (
     <div
-      className={`rounded-2xl p-5 border ${
-        gradient
-          ? 'bg-gradient-to-br from-purple-900/40 to-blue-900/40 border-purple-500/30'
-          : 'bg-white/5 border-white/10'
+      className={`rounded-2xl p-5 border shadow-morandi ${
+        accent
+          ? 'bg-gradient-to-br from-morandi-purple/8 to-morandi-blue/8 border-morandi-purple/20'
+          : 'bg-morandi-surface border-morandi-border'
       }`}
     >
-      <h2 className="text-sm font-semibold text-white/50 mb-3 flex items-center gap-2">
-        <span>{icon}</span>
+      <h2 className="text-xs font-medium text-morandi-subtle mb-3 flex items-center gap-2 uppercase tracking-wider">
+        <span className="text-base">{icon}</span>
         {title}
       </h2>
       {children}
@@ -185,4 +221,4 @@ function Card({
 }
 
 const btnClass =
-  'px-6 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-medium hover:from-blue-500 hover:to-purple-500 transition';
+  'px-6 py-2.5 rounded-2xl bg-morandi-text text-white text-sm font-medium hover:bg-morandi-text/90 transition-all shadow-morandi';

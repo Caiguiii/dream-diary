@@ -27,30 +27,30 @@ export default function Navbar() {
   };
 
   return (
-    <header className="sticky top-0 z-50 backdrop-blur-md border-b border-white/10 bg-night-900/60">
+    <header className="sticky top-0 z-50 bg-morandi-surface/95 backdrop-blur-md border-b border-morandi-border shadow-morandi">
       <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 shrink-0">
-          <span className="text-2xl">🌙</span>
-          <span className="font-bold text-lg bg-gradient-to-r from-blue-300 to-purple-300 bg-clip-text text-transparent">
+          <span className="text-lg">🌙</span>
+          <span className="font-semibold text-sm text-morandi-text tracking-wide">
             夢境日記
           </span>
         </div>
 
-        <nav className="flex gap-1">
+        <nav className="flex gap-0.5">
           {links.map(({ to, label, icon }) => (
             <NavLink
               key={to}
               to={to}
               end={to === '/'}
               className={({ isActive }) =>
-                `px-3 py-1.5 rounded-lg text-sm transition flex items-center gap-1 ${
+                `px-3 py-1.5 rounded-xl text-sm transition-all flex items-center gap-1.5 ${
                   isActive
-                    ? 'bg-purple-600/50 text-white'
-                    : 'text-white/60 hover:text-white hover:bg-white/10'
+                    ? 'bg-morandi-purple/12 text-morandi-purple font-medium'
+                    : 'text-morandi-muted hover:text-morandi-text hover:bg-morandi-surface2'
                 }`
               }
             >
-              <span>{icon}</span>
+              <span className="text-sm">{icon}</span>
               <span className="hidden sm:inline">{label}</span>
             </NavLink>
           ))}
@@ -63,14 +63,16 @@ export default function Navbar() {
                 onClick={handleSync}
                 disabled={syncing}
                 title="從雲端同步夢境"
-                className="text-blue-300/60 hover:text-blue-300 text-xs transition disabled:opacity-40"
+                className="text-morandi-blue/60 hover:text-morandi-blue text-sm transition-colors disabled:opacity-40"
               >
                 {syncing ? '⏳' : '☁️'}
               </button>
-              <span className="text-white/30 text-xs hidden sm:block truncate max-w-[100px]">{email}</span>
+              <span className="text-morandi-subtle text-xs hidden sm:block truncate max-w-[100px]">
+                {email}
+              </span>
               <button
                 onClick={logout}
-                className="text-white/40 hover:text-white/70 text-xs transition"
+                className="text-morandi-muted hover:text-morandi-text text-xs transition-colors px-2 py-1 rounded-lg hover:bg-morandi-surface2"
               >
                 登出
               </button>
@@ -78,7 +80,7 @@ export default function Navbar() {
           ) : isCognitoConfigured ? (
             <button
               onClick={() => navigate('/login')}
-              className="px-3 py-1.5 rounded-lg text-xs bg-purple-600/40 text-purple-200 hover:bg-purple-600/60 transition"
+              className="px-3 py-1.5 rounded-xl text-xs bg-morandi-purple/10 text-morandi-purple hover:bg-morandi-purple/20 transition-colors border border-morandi-purple/20"
             >
               登入
             </button>

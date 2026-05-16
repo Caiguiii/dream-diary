@@ -37,55 +37,58 @@ export default function LoginPage() {
     <div className="min-h-[80vh] flex items-center justify-center py-12">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <div className="text-5xl mb-3">🌙</div>
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-300 to-purple-300 bg-clip-text text-transparent">
+          <div className="text-4xl mb-4">🌙</div>
+          <h1 className="text-xl font-semibold text-morandi-text">
             {step === 'register' ? '建立帳號' : '登入夢境日記'}
           </h1>
+          <p className="text-morandi-subtle text-xs mt-1.5">
+            {step === 'register' ? '開始記錄你的夢境旅程' : '登入後夢境資料將同步至雲端'}
+          </p>
         </div>
 
-        <form onSubmit={handle} className="space-y-4">
-          <input
-            type="email"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            placeholder="電子信箱"
-            required
-            className={inputClass}
-          />
-          <input
-            type="password"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            placeholder="密碼（至少 8 字元）"
-            required
-            minLength={8}
-            className={inputClass}
-          />
+        <div className="bg-morandi-surface border border-morandi-border rounded-3xl p-6 shadow-morandi-md">
+          <form onSubmit={handle} className="space-y-3">
+            <input
+              type="email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              placeholder="電子信箱"
+              required
+              className={inputClass}
+            />
+            <input
+              type="password"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              placeholder="密碼（至少 8 字元）"
+              required
+              minLength={8}
+              className={inputClass}
+            />
 
-          {error && <p className="text-red-400 text-sm text-center">{error}</p>}
+            {error && (
+              <p className="text-morandi-error text-xs text-center py-1">{error}</p>
+            )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold disabled:opacity-40 hover:from-blue-500 hover:to-purple-500 transition"
-          >
-            {loading ? '處理中...' : step === 'login' ? '登入' : '建立帳號'}
-          </button>
-        </form>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-3 rounded-2xl bg-morandi-text text-white text-sm font-medium disabled:opacity-35 hover:bg-morandi-text/90 transition-all mt-1"
+            >
+              {loading ? '處理中...' : step === 'login' ? '登入' : '建立帳號'}
+            </button>
+          </form>
 
-        <p className="text-center text-white/40 text-sm mt-6">
-          {step === 'login' ? '還沒有帳號？' : '已有帳號？'}
-          <button
-            onClick={() => { setStep(step === 'login' ? 'register' : 'login'); setError(''); }}
-            className="text-purple-300 hover:text-purple-200 ml-1"
-          >
-            {step === 'login' ? '免費註冊' : '前往登入'}
-          </button>
-        </p>
-
-        <p className="text-center text-white/20 text-xs mt-8">
-          登入後夢境資料將同步至雲端
-        </p>
+          <p className="text-center text-morandi-subtle text-xs mt-5">
+            {step === 'login' ? '還沒有帳號？' : '已有帳號？'}
+            <button
+              onClick={() => { setStep(step === 'login' ? 'register' : 'login'); setError(''); }}
+              className="text-morandi-purple hover:text-morandi-purple/80 ml-1 transition-colors"
+            >
+              {step === 'login' ? '免費註冊' : '前往登入'}
+            </button>
+          </p>
+        </div>
       </div>
     </div>
   );
@@ -100,4 +103,4 @@ function friendlyError(err: unknown): string {
 }
 
 const inputClass =
-  'w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-purple-500 transition';
+  'w-full bg-morandi-bg border border-morandi-border rounded-2xl px-4 py-3 text-sm text-morandi-text placeholder-morandi-subtle focus:outline-none focus:border-morandi-purple/40 focus:ring-2 focus:ring-morandi-purple/8 transition-all';
