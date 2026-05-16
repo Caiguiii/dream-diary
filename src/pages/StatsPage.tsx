@@ -29,7 +29,18 @@ export default function StatsPage() {
 
   const clarityPct = useMemo(() => {
     if (dreams.length === 0) return 0;
-    return Math.round(dreams.filter(d => d.clarity === 'clear').length / dreams.length * 100);
+
+    const clarityScore = {
+      fuzzy: 20,
+      normal: 60,
+      clear: 100
+    };
+
+    const totalScore = dreams.reduce((sum, dream) => {
+      return sum + clarityScore[dream.clarity];
+    }, 0);
+
+    return Math.round(totalScore / dreams.length);
   }, [dreams]);
 
   const emotionFreq = useMemo(() => {

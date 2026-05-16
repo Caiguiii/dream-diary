@@ -83,8 +83,8 @@ export default function AnalysisPage() {
             <p className="text-morandi-text text-sm leading-relaxed">{analysis.summary}</p>
           </Card>
 
-          {/* 周公解夢 */}
-          <Card title="周公解夢解讀">
+          {/* 夢境解析 */}
+          <Card title="夢境解析">
             <p className="text-morandi-muted text-sm leading-relaxed">
               {analysis.zhougongInterpretation}
             </p>

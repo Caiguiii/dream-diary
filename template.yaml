@@ -1,6 +1,13 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 
+Parameters:
+  GroqApiKey:
+    Type: String
+    NoEcho: true
+    Default: ''
+    Description: Groq API key (free at console.groq.com)
+
 Globals:
   Function:
     Timeout: 15
@@ -93,6 +100,43 @@ Resources:
           - !Ref UserPoolClient
         Issuer: !Sub 'https://cognito-idp.${AWS::Region}.amazonaws.com/${UserPool}'
       Name: CognitoJWT
+
+  # --- Analyze Dream (Groq) ---
+  AnalyzeDreamFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambda/analyze_dream/
+      Handler: handler.handler
+      Timeout: 60
+      Environment:
+        Variables:
+          GROQ_API_KEY: !Ref GroqApiKey
+          GROQ_MODEL: 'llama-3.3-70b-versatile'
+
+  AnalyzeDreamIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref DreamApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AnalyzeDreamFunction.Arn}/invocations'
+      PayloadFormatVersion: '2.0'
+
+  AnalyzeDreamRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref DreamApi
+      RouteKey: 'POST /analyze'
+      AuthorizationType: JWT
+      AuthorizerId: !Ref DreamApiAuthorizer
+      Target: !Sub 'integrations/${AnalyzeDreamIntegration}'
+
+  AnalyzeDreamPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt AnalyzeDreamFunction.Arn
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${DreamApi}/*'
 
   # --- Pre Sign-up Trigger ---
   PreSignUpFunction:
