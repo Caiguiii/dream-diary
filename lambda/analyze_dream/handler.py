@@ -55,7 +55,7 @@ def build_prompt(form):
         '請回傳以下 JSON（只回傳 JSON，不要其他文字）：\n'
         '{\n'
         '  "summary": "夢境摘要，2-3 句話",\n'
-        '  "zhougongInterpretation": "周公解夢解讀，150-250 字",\n'
+        '  "zhougongInterpretation": "夢境解析，150-250 字",\n'
         '  "themes": ["主題1", "主題2", "主題3"],\n'
         '  "emotions": [{"name": "情緒", "percentage": 數字}],\n'
         '  "symbols": [{"symbol": "元素", "meaning": "意義"}],\n'
