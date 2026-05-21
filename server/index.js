@@ -37,6 +37,7 @@ function buildPrompt(form) {
 
 請回傳以下 JSON 格式（只回傳 JSON，不要其他文字）：
 {
+  "title": "夢境標題，10-20字，要有詩意、神秘感、情緒感，像短篇小說章節名",
   "summary": "夢境摘要，2-3 句話，簡明扼要",
   "zhougongInterpretation": "周公解夢傳統解讀，結合心理學觀點，150-250 字",
   "themes": ["主題1", "主題2", "主題3"],
@@ -84,8 +85,9 @@ app.post('/api/analyze', async (req, res) => {
     const raw = await callOllama(buildPrompt(req.body));
     // Strip markdown code fences if model wraps the JSON
     const jsonText = raw.trim().replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '');
-    const analysis = JSON.parse(jsonText);
-    res.json({ success: true, analysis });
+    const parsed = JSON.parse(jsonText);
+    const { title = '', ...analysis } = parsed;
+    res.json({ success: true, title, analysis });
   } catch (err) {
     console.error('Analysis error:', err);
     const isSyntax = err instanceof SyntaxError;

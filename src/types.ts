@@ -30,3 +30,15 @@ export interface Dream {
   analysis?: DreamAnalysis;
   createdAt: string;
 }
+
+export interface WeeklyReportData {
+  weekStart: string;
+  weekEnd: string;
+  dreamCount: number;
+  topEmotions: Array<{ name: string; count: number }>;
+  topKeywords: string[];
+  dreamTypeCounts: Array<{ type: string; count: number }>;
+  moodSummary: string;
+  dreamStory: string;
+  generatedAt: string;
+}

@@ -113,6 +113,83 @@ Resources:
           GROQ_API_KEY: !Ref GroqApiKey
           GROQ_MODEL: 'llama-3.3-70b-versatile'
 
+  # --- Generate Title (Groq) ---
+  GenerateTitleFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambda/generate_title/
+      Handler: handler.handler
+      Timeout: 20
+      Environment:
+        Variables:
+          GROQ_API_KEY: !Ref GroqApiKey
+          GROQ_MODEL: 'llama-3.1-8b-instant'
+
+  GenerateTitleIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref DreamApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GenerateTitleFunction.Arn}/invocations'
+      PayloadFormatVersion: '2.0'
+
+  GenerateTitleRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref DreamApi
+      RouteKey: 'POST /generate-title'
+      AuthorizationType: JWT
+      AuthorizerId: !Ref DreamApiAuthorizer
+      Target: !Sub 'integrations/${GenerateTitleIntegration}'
+
+  GenerateTitlePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt GenerateTitleFunction.Arn
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${DreamApi}/*'
+
+  # --- Weekly Report (Groq + DynamoDB) ---
+  WeeklyReportFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambda/weekly_report/
+      Handler: handler.handler
+      Timeout: 60
+      Environment:
+        Variables:
+          GROQ_API_KEY: !Ref GroqApiKey
+          GROQ_MODEL: 'llama-3.3-70b-versatile'
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref DreamsTable
+
+  WeeklyReportIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref DreamApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${WeeklyReportFunction.Arn}/invocations'
+      PayloadFormatVersion: '2.0'
+
+  WeeklyReportRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref DreamApi
+      RouteKey: 'GET /weekly-report'
+      AuthorizationType: JWT
+      AuthorizerId: !Ref DreamApiAuthorizer
+      Target: !Sub 'integrations/${WeeklyReportIntegration}'
+
+  WeeklyReportPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt WeeklyReportFunction.Arn
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${DreamApi}/*'
+
   AnalyzeDreamIntegration:
     Type: AWS::ApiGatewayV2::Integration
     Properties:

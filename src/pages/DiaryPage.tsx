@@ -90,7 +90,7 @@ export default function DiaryPage() {
           </p>
           {!query && typeFilter === '全部' && (
             <button
-              onClick={() => navigate('/')}
+              onClick={() => navigate('/input')}
               className="mt-5 px-6 py-3 rounded-full bg-morandi-accent text-white text-sm font-medium hover:bg-morandi-accent/90 transition-all shadow-morandi"
             >
               記錄第一個夢境

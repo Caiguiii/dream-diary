@@ -1,19 +1,26 @@
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getDream, deleteDream } from '../utils/storage';
+import { getDream, deleteDream, saveDream } from '../utils/storage';
+import { apiGenerateTitle, isApiConfigured } from '../utils/api';
 
 const CLARITY_LABEL = { fuzzy: '模糊', normal: '普通', clear: '清晰' };
 
 export default function AnalysisPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const dream = id ? getDream(id) : undefined;
+  const dreamData = id ? getDream(id) : undefined;
+
+  const [dream, setDream] = useState(dreamData);
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [titleDraft, setTitleDraft] = useState(dream?.title ?? '');
+  const [regenLoading, setRegenLoading] = useState(false);
 
   if (!dream) {
     return (
       <div className="py-20 text-center">
         <div className="text-4xl mb-4">😶‍🌫️</div>
         <p className="text-morandi-muted text-sm">找不到這個夢境紀錄</p>
-        <button onClick={() => navigate('/')} className={btnClass + ' mt-6'}>
+        <button onClick={() => navigate('/input')} className={btnClass + ' mt-6'}>
           回首頁
         </button>
       </div>
@@ -26,6 +33,30 @@ export default function AnalysisPage() {
     if (confirm('確定要刪除這筆夢境紀錄嗎？')) {
       deleteDream(dream.id);
       navigate('/diary');
+    }
+  };
+
+  const handleSaveTitle = async (newTitle: string) => {
+    setEditingTitle(false);
+    if (!newTitle.trim() || newTitle === dream.title) return;
+    const updated = { ...dream, title: newTitle.trim() };
+    setDream(updated);
+    await saveDream(updated);
+  };
+
+  const handleRegenTitle = async () => {
+    if (!isApiConfigured()) return;
+    setRegenLoading(true);
+    try {
+      const newTitle = await apiGenerateTitle(dream.content, dream.mood, dream.dreamType);
+      setTitleDraft(newTitle);
+      const updated = { ...dream, title: newTitle };
+      setDream(updated);
+      await saveDream(updated);
+    } catch {
+      // keep existing
+    } finally {
+      setRegenLoading(false);
     }
   };
 
@@ -54,7 +85,42 @@ export default function AnalysisPage() {
 
       {/* Dream title & meta */}
       <div>
-        <h1 className="text-xl font-bold text-morandi-text">{dream.title || '無題夢境'}</h1>
+        <div className="flex items-start gap-2">
+          {editingTitle ? (
+            <input
+              autoFocus
+              value={titleDraft}
+              onChange={e => setTitleDraft(e.target.value)}
+              onBlur={() => handleSaveTitle(titleDraft)}
+              onKeyDown={e => {
+                if (e.key === 'Enter') handleSaveTitle(titleDraft);
+                if (e.key === 'Escape') { setTitleDraft(dream.title); setEditingTitle(false); }
+              }}
+              className="flex-1 text-xl font-bold text-morandi-text bg-transparent border-b-2 border-morandi-accent outline-none pb-0.5"
+            />
+          ) : (
+            <h1
+              className="flex-1 text-xl font-bold text-morandi-text cursor-pointer hover:text-morandi-accent/80 transition-colors"
+              onClick={() => { setTitleDraft(dream.title); setEditingTitle(true); }}
+              title="點擊編輯標題"
+            >
+              {dream.title || '無題夢境'}
+            </h1>
+          )}
+
+          {/* Regen title button */}
+          {isApiConfigured() && !editingTitle && (
+            <button
+              onClick={handleRegenTitle}
+              disabled={regenLoading}
+              title="重新生成標題"
+              className="shrink-0 mt-0.5 text-morandi-subtle hover:text-morandi-accent text-xs border border-morandi-border px-2 py-1 rounded-full transition-colors disabled:opacity-40 flex items-center gap-1"
+            >
+              {regenLoading ? <Spinner /> : '↻'} 重生成
+            </button>
+          )}
+        </div>
+
         <div className="flex flex-wrap items-center gap-2 mt-1.5">
           <span className="text-morandi-subtle text-sm">{dream.date}</span>
           {dream.mood && <span className="text-sm">{dream.mood}</span>}
@@ -78,34 +144,26 @@ export default function AnalysisPage() {
         <div className="text-center py-8 text-morandi-subtle text-sm">尚無分析結果</div>
       ) : (
         <>
-          {/* AI Summary */}
           <Card title="夢境摘要 🌙">
             <p className="text-morandi-text text-sm leading-relaxed">{analysis.summary}</p>
           </Card>
 
-          {/* 夢境解析 */}
           <Card title="夢境解析">
             <p className="text-morandi-muted text-sm leading-relaxed">
               {analysis.zhougongInterpretation}
             </p>
           </Card>
 
-          {/* Themes + Emotions combined */}
           <Card title="主題與情緒">
-            {/* Theme tags */}
             {analysis.themes.length > 0 && (
               <div className="flex flex-wrap gap-2 mb-5">
                 {analysis.themes.map(t => (
-                  <span
-                    key={t}
-                    className="px-3 py-1 rounded-full bg-morandi-accent text-white text-xs font-medium"
-                  >
+                  <span key={t} className="px-3 py-1 rounded-full bg-morandi-accent text-white text-xs font-medium">
                     {t}
                   </span>
                 ))}
               </div>
             )}
-            {/* Emotion progress bars */}
             <div className="space-y-3.5">
               {analysis.emotions.slice(0, 5).map(em => (
                 <div key={em.name}>
@@ -124,7 +182,6 @@ export default function AnalysisPage() {
             </div>
           </Card>
 
-          {/* Symbol elements */}
           <Card title="象徵元素">
             <div className="divide-y divide-morandi-border">
               {analysis.symbols.map((s, i) => (
@@ -141,15 +198,11 @@ export default function AnalysisPage() {
             </div>
           </Card>
 
-          {/* Keywords */}
           <div>
             <h3 className="text-morandi-muted text-xs font-medium uppercase tracking-wider mb-3">關鍵字</h3>
             <div className="flex flex-wrap gap-2">
               {analysis.keywords.map(k => (
-                <span
-                  key={k}
-                  className="px-3 py-1.5 rounded-full bg-morandi-surface border border-morandi-border text-morandi-muted text-xs shadow-morandi"
-                >
+                <span key={k} className="px-3 py-1.5 rounded-full bg-morandi-surface border border-morandi-border text-morandi-muted text-xs shadow-morandi">
                   {k}
                 </span>
               ))}
@@ -158,7 +211,7 @@ export default function AnalysisPage() {
         </>
       )}
 
-      <button onClick={() => navigate('/')} className={btnClass}>
+      <button onClick={() => navigate('/input')} className={btnClass}>
         記錄新夢境
       </button>
     </div>
@@ -171,6 +224,15 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
       <h2 className="text-morandi-text text-sm font-semibold mb-3">{title}</h2>
       {children}
     </div>
+  );
+}
+
+function Spinner() {
+  return (
+    <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24" fill="none">
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+    </svg>
   );
 }
 

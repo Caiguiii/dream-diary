@@ -3,6 +3,28 @@ import { apiSaveDream, apiDeleteDream, isApiConfigured } from './api';
 import { getIdToken } from './auth';
 
 const KEY = 'dream-journal-v1';
+const WEEKLY_KEY_PREFIX = 'dream-weekly-';
+
+export function clearLocalDreams(): void {
+  localStorage.removeItem(KEY);
+  // Also clear cached weekly reports
+  Object.keys(localStorage)
+    .filter(k => k.startsWith(WEEKLY_KEY_PREFIX))
+    .forEach(k => localStorage.removeItem(k));
+}
+
+export function getCachedWeeklyReport(weekStart: string): object | null {
+  try {
+    const raw = localStorage.getItem(`${WEEKLY_KEY_PREFIX}${weekStart}`);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function setCachedWeeklyReport(weekStart: string, data: object): void {
+  localStorage.setItem(`${WEEKLY_KEY_PREFIX}${weekStart}`, JSON.stringify(data));
+}
 
 // ── Local storage (always available) ─────────────────────────────────────────
 
@@ -40,11 +62,18 @@ export function getDreams(): Dream[] {
   return localGetAll();
 }
 
-export async function saveDream(dream: Dream): Promise<void> {
+export async function saveDream(dream: Dream): Promise<{ synced: boolean }> {
   localSave(dream);
   if (await isCloudAvailable()) {
-    apiSaveDream(dream).catch(err => console.warn('Cloud sync failed:', err));
+    try {
+      await apiSaveDream(dream);
+      return { synced: true };
+    } catch (err) {
+      console.warn('Cloud sync failed:', err);
+      return { synced: false };
+    }
   }
+  return { synced: false };
 }
 
 export async function deleteDream(id: string): Promise<void> {

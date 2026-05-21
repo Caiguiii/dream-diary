@@ -1,4 +1,4 @@
-import type { Dream, DreamAnalysis } from '../types';
+import type { Dream, DreamAnalysis, WeeklyReportData } from '../types';
 import { getIdToken } from './auth';
 
 const API_URL = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
@@ -40,11 +40,32 @@ export async function apiDeleteDream(id: string): Promise<void> {
   await req(`/dreams/${id}`, { method: 'DELETE' });
 }
 
-export async function apiAnalyzeDream(form: object): Promise<DreamAnalysis> {
-  const result = await req<{ success: boolean; analysis: DreamAnalysis; error?: string }>(
-    '/analyze',
-    { method: 'POST', body: JSON.stringify(form) }
-  );
+export async function apiAnalyzeDream(
+  form: object
+): Promise<{ analysis: DreamAnalysis; title: string }> {
+  const result = await req<{
+    success: boolean;
+    analysis: DreamAnalysis;
+    title: string;
+    error?: string;
+  }>('/analyze', { method: 'POST', body: JSON.stringify(form) });
   if (!result.success) throw new Error(result.error || '分析失敗');
-  return result.analysis;
+  return { analysis: result.analysis, title: result.title || '' };
+}
+
+export async function apiGenerateTitle(
+  content: string,
+  mood: string,
+  dreamType: string
+): Promise<string> {
+  const result = await req<{ success: boolean; title: string; error?: string }>(
+    '/generate-title',
+    { method: 'POST', body: JSON.stringify({ content, mood, dreamType }) }
+  );
+  if (!result.success) throw new Error(result.error || '標題生成失敗');
+  return result.title;
+}
+
+export async function apiGetWeeklyReport(weekStart: string): Promise<WeeklyReportData> {
+  return req<WeeklyReportData>(`/weekly-report?weekStart=${weekStart}`);
 }
