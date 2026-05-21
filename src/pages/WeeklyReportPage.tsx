@@ -5,173 +5,189 @@ import { apiGetWeeklyReport, isApiConfigured } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import type { WeeklyReportData } from '../types';
 
+// ── Date helpers ──────────────────────────────────────────────────────────────
 function getWeekStart(offset = 0): string {
   const d = new Date();
   d.setHours(0, 0, 0, 0);
   d.setDate(d.getDate() - d.getDay() + offset * 7);
   return d.toISOString().split('T')[0];
 }
-
 function getWeekEnd(start: string): string {
   const d = new Date(start);
   d.setDate(d.getDate() + 6);
   return d.toISOString().split('T')[0];
 }
-
-function formatWeekLabel(start: string, end: string): string {
-  const s = new Date(start);
-  const e = new Date(end);
-  return `${s.getMonth() + 1}/${s.getDate()} – ${e.getMonth() + 1}/${e.getDate()}`;
+function fmtWeek(start: string, end: string) {
+  const s = new Date(start), e = new Date(end);
+  return `${s.getMonth() + 1}月${s.getDate()}日 – ${e.getMonth() + 1}月${e.getDate()}日`;
 }
 
-function buildLocalReport(weekStart: string, weekEnd: string): WeeklyReportData {
-  const dreams = getDreams().filter(d => d.date >= weekStart && d.date <= weekEnd);
-  const emotionMap: Record<string, number> = {};
-  const kwFreq: Record<string, number> = {};
-  const typeMap: Record<string, number> = {};
-
+// ── Local fallback ────────────────────────────────────────────────────────────
+function buildLocal(ws: string, we: string): WeeklyReportData {
+  const dreams = getDreams().filter(d => d.date >= ws && d.date <= we);
+  const em: Record<string, number> = {};
+  const kw: Record<string, number> = {};
+  const tp: Record<string, number> = {};
   for (const d of dreams) {
-    for (const em of d.analysis?.emotions ?? []) {
-      emotionMap[em.name] = (emotionMap[em.name] ?? 0) + 1;
-    }
-    for (const kw of d.analysis?.keywords ?? []) {
-      kwFreq[kw] = (kwFreq[kw] ?? 0) + 1;
-    }
-    if (d.dreamType) typeMap[d.dreamType] = (typeMap[d.dreamType] ?? 0) + 1;
+    for (const e of d.analysis?.emotions ?? []) em[e.name] = (em[e.name] ?? 0) + 1;
+    for (const k of d.analysis?.keywords ?? []) kw[k] = (kw[k] ?? 0) + 1;
+    if (d.dreamType) tp[d.dreamType] = (tp[d.dreamType] ?? 0) + 1;
   }
-
   return {
-    weekStart,
-    weekEnd,
+    weekStart: ws, weekEnd: we,
     dreamCount: dreams.length,
-    topEmotions: Object.entries(emotionMap)
-      .sort((a, b) => b[1] - a[1]).slice(0, 5)
-      .map(([name, count]) => ({ name, count })),
-    topKeywords: Object.entries(kwFreq)
-      .sort((a, b) => b[1] - a[1]).slice(0, 8)
-      .map(([kw]) => kw),
-    dreamTypeCounts: Object.entries(typeMap)
-      .sort((a, b) => b[1] - a[1])
-      .map(([type, count]) => ({ type, count })),
-    moodSummary: '',
-    dreamStory: '',
-    generatedAt: new Date().toISOString(),
+    topEmotions: Object.entries(em).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([name, count]) => ({ name, count })),
+    topKeywords: Object.entries(kw).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([k]) => k),
+    dreamTypeCounts: Object.entries(tp).sort((a, b) => b[1] - a[1]).map(([type, count]) => ({ type, count })),
+    moodSummary: '', dreamStory: '', generatedAt: new Date().toISOString(),
   };
 }
 
+// ── Floating particles decoration ─────────────────────────────────────────────
+function StoryParticles() {
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none rounded-3xl">
+      {[...Array(12)].map((_, i) => (
+        <div
+          key={i}
+          className="absolute rounded-full"
+          style={{
+            left: `${10 + (i * 7.3) % 80}%`,
+            top: `${20 + (i * 4.7) % 60}%`,
+            width: `${1 + (i % 3) * 0.8}px`,
+            height: `${1 + (i % 3) * 0.8}px`,
+            background: i % 3 === 0 ? 'rgba(196,168,117,0.7)' : 'rgba(255,255,255,0.25)',
+            animation: `float ${8 + (i % 5) * 2}s ${(i % 4) * 0.7}s ease-in-out infinite`,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+// ── Loading animation ─────────────────────────────────────────────────────────
+function StoryLoader() {
+  return (
+    <div
+      className="relative rounded-3xl p-8 overflow-hidden text-center"
+      style={{
+        background: 'linear-gradient(160deg, #0e0f20 0%, #15112e 60%, #0e0f20 100%)',
+        border: '1px solid rgba(196,168,117,0.15)',
+        minHeight: '260px',
+        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+      }}
+    >
+      <StoryParticles />
+      <div
+        className="relative z-10 text-5xl mb-6 animate-float"
+        style={{ filter: 'drop-shadow(0 0 20px rgba(196,168,117,0.5))' }}
+      >
+        🌙
+      </div>
+      <p className="relative z-10 text-sm mb-1" style={{ color: '#c4a875' }}>
+        AI 正在編寫你的夢境故事…
+      </p>
+      <p className="relative z-10 text-xs" style={{ color: '#5a5672' }}>
+        這可能需要 15-20 秒
+      </p>
+      <div className="relative z-10 flex gap-2 mt-5">
+        {[0, 1, 2].map(i => (
+          <div
+            key={i}
+            className="w-1.5 h-1.5 rounded-full animate-twinkle"
+            style={{ background: '#c4a875', animationDelay: `${i * 0.4}s` }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── Main page ─────────────────────────────────────────────────────────────────
 export default function WeeklyReportPage() {
   const navigate = useNavigate();
   const { isLoggedIn, isCognitoConfigured } = useAuth();
 
-  const [weekOffset, setWeekOffset] = useState(0);
+  const [offset, setOffset] = useState(0);
   const [report, setReport] = useState<WeeklyReportData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const weekStart = useMemo(() => getWeekStart(weekOffset), [weekOffset]);
-  const weekEnd = useMemo(() => getWeekEnd(weekStart), [weekStart]);
-  const weekLabel = useMemo(() => formatWeekLabel(weekStart, weekEnd), [weekStart, weekEnd]);
-  const isCurrentWeek = weekOffset === 0;
+  const ws = useMemo(() => getWeekStart(offset), [offset]);
+  const we = useMemo(() => getWeekEnd(ws), [ws]);
+  const weekLabel = useMemo(() => fmtWeek(ws, we), [ws, we]);
 
-  const loadReport = useCallback(async () => {
+  const load = useCallback(async () => {
     setError('');
-
-    // Try cache first
-    const cached = getCachedWeeklyReport(weekStart) as WeeklyReportData | null;
-    if (cached) {
-      setReport(cached);
-      return;
-    }
+    const cached = getCachedWeeklyReport(ws) as WeeklyReportData | null;
+    if (cached) { setReport(cached); return; }
 
     setLoading(true);
     try {
       if (isApiConfigured() && isLoggedIn) {
-        const data = await apiGetWeeklyReport(weekStart);
+        const data = await apiGetWeeklyReport(ws);
         setReport(data);
-        setCachedWeeklyReport(weekStart, data);
+        setCachedWeeklyReport(ws, data);
       } else {
-        // Local fallback — no AI story
-        const local = buildLocalReport(weekStart, weekEnd);
-        setReport(local);
+        setReport(buildLocal(ws, we));
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : '載入失敗');
-      // Fallback to local
-      const local = buildLocalReport(weekStart, weekEnd);
-      setReport(local);
+      setReport(buildLocal(ws, we));
     } finally {
       setLoading(false);
     }
-  }, [weekStart, weekEnd, isLoggedIn]);
+  }, [ws, we, isLoggedIn]);
 
-  useEffect(() => {
-    setReport(null);
-    loadReport();
-  }, [loadReport]);
+  useEffect(() => { setReport(null); load(); }, [load]);
 
-  const handleRefresh = async () => {
-    // Clear cache and reload
-    localStorage.removeItem(`dream-weekly-${weekStart}`);
+  const handleRefresh = () => {
+    localStorage.removeItem(`dream-weekly-${ws}`);
     setReport(null);
-    await loadReport();
+    load();
   };
 
-  const canGoNext = weekOffset < 0;
-
   return (
-    <div className="py-4 space-y-5">
+    <div className="py-4 space-y-4 page-enter">
+
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-bold text-morandi-text">夢境週報</h1>
-          <p className="text-morandi-muted text-sm mt-0.5">AI 生成你的夢境故事</p>
+          <p className="text-morandi-muted text-sm mt-0.5">每週一頁，你的夢境小說</p>
         </div>
-        {report && !loading && (
+        {report && !loading && report.dreamCount > 0 && (
           <button
             onClick={handleRefresh}
-            className="text-morandi-subtle hover:text-morandi-accent text-xs border border-morandi-border px-3 py-1.5 rounded-full transition-colors flex items-center gap-1"
+            className="text-morandi-subtle hover:text-morandi-accent text-xs border border-morandi-border px-3 py-1.5 rounded-full transition-colors flex items-center gap-1 shrink-0 mt-1"
           >
-            ↻ 重新生成
+            ↻ 重生成
           </button>
         )}
       </div>
 
       {/* Week navigator */}
-      <div className="flex items-center justify-between bg-morandi-surface border border-morandi-border rounded-2xl px-4 py-3 shadow-morandi">
+      <div className="glass-morandi flex items-center justify-between rounded-2xl px-4 py-3 shadow-morandi">
         <button
-          onClick={() => setWeekOffset(o => o - 1)}
-          className="text-morandi-subtle hover:text-morandi-accent transition-colors p-1"
+          onClick={() => setOffset(o => o - 1)}
+          className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-morandi-warm transition-colors text-morandi-muted hover:text-morandi-accent text-lg"
         >
-          ←
+          ‹
         </button>
         <div className="text-center">
           <p className="text-morandi-text font-semibold text-sm">{weekLabel}</p>
           <p className="text-morandi-subtle text-xs mt-0.5">
-            {isCurrentWeek ? '本週' : `${Math.abs(weekOffset)} 週前`}
+            {offset === 0 ? '本週' : `${Math.abs(offset)} 週前`}
           </p>
         </div>
         <button
-          onClick={() => setWeekOffset(o => o + 1)}
-          disabled={!canGoNext}
-          className="text-morandi-subtle hover:text-morandi-accent transition-colors p-1 disabled:opacity-30"
+          onClick={() => setOffset(o => o + 1)}
+          disabled={offset >= 0}
+          className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-morandi-warm transition-colors text-morandi-muted hover:text-morandi-accent text-lg disabled:opacity-25"
         >
-          →
+          ›
         </button>
       </div>
-
-      {/* Loading */}
-      {loading && (
-        <div className="text-center py-16 space-y-3">
-          <div className="flex justify-center">
-            <svg className="animate-spin h-8 w-8 text-morandi-accent" viewBox="0 0 24 24" fill="none">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-            </svg>
-          </div>
-          <p className="text-morandi-muted text-sm">AI 正在編寫你的夢境故事…</p>
-          <p className="text-morandi-subtle text-xs">這可能需要 10-20 秒</p>
-        </div>
-      )}
 
       {/* Error */}
       {error && !loading && (
@@ -180,18 +196,35 @@ export default function WeeklyReportPage() {
         </div>
       )}
 
-      {/* No dreams */}
-      {!loading && report && report.dreamCount === 0 && (
-        <div className="text-center py-16">
-          <div className="text-5xl mb-4">🌑</div>
-          <p className="text-morandi-muted text-sm font-medium">這週還沒有夢境紀錄</p>
-          <p className="text-morandi-subtle text-xs mt-1">記錄夢境後，AI 會為你生成本週故事</p>
-          <button
-            onClick={() => navigate('/input')}
-            className="mt-5 px-6 py-3 rounded-full bg-morandi-accent text-white text-sm font-medium hover:bg-morandi-accent/90 transition-all"
-          >
-            記錄夢境 ✨
-          </button>
+      {/* Loading story card */}
+      {loading && <StoryLoader />}
+
+      {/* Empty state */}
+      {!loading && report?.dreamCount === 0 && (
+        <div
+          className="relative rounded-3xl p-8 text-center overflow-hidden"
+          style={{
+            background: 'linear-gradient(160deg, #0e0f20, #15112e, #0e0f20)',
+            border: '1px solid rgba(196,168,117,0.12)',
+          }}
+        >
+          <StoryParticles />
+          <div className="relative z-10">
+            <div className="text-4xl mb-4">🌑</div>
+            <p className="text-sm mb-1" style={{ color: '#8a86a8' }}>這週還沒有夢境紀錄</p>
+            <p className="text-xs mb-5" style={{ color: '#5a5672' }}>記錄夢境後，AI 會為你生成本週故事</p>
+            <button
+              onClick={() => navigate('/input')}
+              className="px-6 py-2.5 rounded-full text-sm font-medium transition-all"
+              style={{
+                background: 'linear-gradient(135deg, rgba(196,168,117,0.2), rgba(196,129,90,0.28))',
+                border: '1px solid rgba(196,168,117,0.35)',
+                color: '#e8d5a0',
+              }}
+            >
+              記錄夢境 ✨
+            </button>
+          </div>
         </div>
       )}
 
@@ -200,34 +233,96 @@ export default function WeeklyReportPage() {
         <>
           {/* Stats row */}
           <div className="grid grid-cols-3 gap-3">
-            <StatCard value={String(report.dreamCount)} label="夢境數量" />
-            <StatCard value={String(report.topEmotions[0]?.name ?? '—')} label="主要情緒" small />
-            <StatCard value={String(report.topKeywords[0] ?? '—')} label="高頻關鍵字" small />
+            <MiniStat value={String(report.dreamCount)} label="夢境數量" />
+            <MiniStat value={report.topEmotions[0]?.name ?? '—'} label="主要情緒" small />
+            <MiniStat value={report.topKeywords[0] ?? '—'} label="高頻詞" small />
           </div>
 
-          {/* Dream story — main feature */}
+          {/* Dream story card — main feature */}
           {report.dreamStory ? (
-            <div className="relative bg-gradient-to-br from-morandi-warm to-morandi-surface border border-morandi-accent/20 rounded-2xl p-5 shadow-morandi-md overflow-hidden">
-              {/* Decorative background */}
-              <div className="absolute top-0 right-0 w-32 h-32 bg-morandi-accent/5 rounded-full -translate-y-8 translate-x-8 pointer-events-none" />
-              <div className="absolute bottom-0 left-0 w-24 h-24 bg-morandi-accent/5 rounded-full translate-y-6 -translate-x-6 pointer-events-none" />
+            <div
+              className="relative rounded-3xl overflow-hidden shadow-dream animate-fade-in"
+              style={{
+                background: 'linear-gradient(160deg, #0a0c1e 0%, #141128 45%, #1a1535 80%, #0a0c1e 100%)',
+                border: '1px solid rgba(196,168,117,0.18)',
+              }}
+            >
+              {/* Star particles */}
+              <StoryParticles />
 
-              <div className="relative">
-                <div className="flex items-center gap-2 mb-4">
-                  <span className="text-2xl">🌙</span>
-                  <h2 className="text-morandi-text font-bold text-base">本週夢境故事</h2>
+              {/* Nebula glow top-right */}
+              <div
+                className="absolute -top-16 -right-16 w-48 h-48 rounded-full pointer-events-none"
+                style={{ background: 'radial-gradient(circle, rgba(130,60,220,0.15) 0%, transparent 65%)' }}
+              />
+              {/* Gold glow bottom-left */}
+              <div
+                className="absolute -bottom-10 -left-10 w-40 h-40 rounded-full pointer-events-none"
+                style={{ background: 'radial-gradient(circle, rgba(196,168,117,0.1) 0%, transparent 65%)' }}
+              />
+
+              <div className="relative z-10 p-6">
+                {/* Story header */}
+                <div className="flex items-center gap-3 mb-5">
+                  <div
+                    className="text-3xl animate-float"
+                    style={{ filter: 'drop-shadow(0 0 12px rgba(196,168,117,0.5))' }}
+                  >
+                    🌙
+                  </div>
+                  <div>
+                    <p className="font-bold text-base" style={{ color: '#e8d5a0' }}>
+                      本週夢境故事
+                    </p>
+                    {report.moodSummary && (
+                      <p className="text-xs mt-0.5" style={{ color: '#8a86a8' }}>
+                        {report.moodSummary}
+                      </p>
+                    )}
+                  </div>
                 </div>
-                {report.moodSummary && (
-                  <p className="text-morandi-accent text-xs mb-4 italic">{report.moodSummary}</p>
-                )}
-                <p className="text-morandi-text text-sm leading-relaxed whitespace-pre-wrap">
+
+                {/* Divider */}
+                <div
+                  className="mb-5"
+                  style={{ height: '1px', background: 'linear-gradient(90deg, transparent, rgba(196,168,117,0.35), transparent)' }}
+                />
+
+                {/* Story text */}
+                <p
+                  className="text-sm leading-[2] whitespace-pre-wrap"
+                  style={{
+                    color: '#d4cce8',
+                    fontFamily: "'PingFang TC', 'Noto Serif TC', 'Georgia', serif",
+                    letterSpacing: '0.04em',
+                  }}
+                >
                   {report.dreamStory}
                 </p>
+
+                {/* Footer */}
+                <div
+                  className="mt-6 pt-4 flex items-center justify-between"
+                  style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}
+                >
+                  <span className="text-xs" style={{ color: '#5a5672' }}>
+                    {weekLabel}
+                  </span>
+                  <span className="text-xs" style={{ color: '#5a5672' }}>
+                    共 {report.dreamCount} 篇夢境 · AI 生成
+                  </span>
+                </div>
               </div>
             </div>
           ) : (
-            <div className="bg-morandi-surface border border-morandi-border rounded-2xl p-5 text-center shadow-morandi">
-              <p className="text-morandi-muted text-sm">
+            <div
+              className="relative rounded-3xl p-6 text-center"
+              style={{
+                background: 'linear-gradient(160deg, #0e0f20, #15112e)',
+                border: '1px solid rgba(196,168,117,0.10)',
+              }}
+            >
+              <p className="text-sm mb-1" style={{ color: '#8a86a8' }}>
                 {isCognitoConfigured && !isLoggedIn
                   ? '登入後可使用 AI 生成夢境故事'
                   : '本週夢境故事尚未生成'}
@@ -235,7 +330,12 @@ export default function WeeklyReportPage() {
               {isCognitoConfigured && !isLoggedIn && (
                 <button
                   onClick={() => navigate('/login')}
-                  className="mt-3 px-5 py-2 rounded-full bg-morandi-accent text-white text-xs font-medium hover:bg-morandi-accent/90 transition-all"
+                  className="mt-3 px-5 py-2 rounded-full text-xs font-medium transition-all"
+                  style={{
+                    background: 'rgba(196,168,117,0.2)',
+                    border: '1px solid rgba(196,168,117,0.3)',
+                    color: '#c4a875',
+                  }}
                 >
                   登入帳號
                 </button>
@@ -245,58 +345,61 @@ export default function WeeklyReportPage() {
 
           {/* Emotions */}
           {report.topEmotions.length > 0 && (
-            <Section title="本週情緒分佈">
+            <GlassCard title="本週情緒分佈">
               <div className="space-y-3">
                 {report.topEmotions.map((em, i) => (
                   <div key={em.name} className="flex items-center gap-3">
-                    <span className="text-morandi-muted text-xs w-4 shrink-0">{i + 1}</span>
+                    <span className="text-morandi-subtle text-xs w-4 shrink-0 text-right">{i + 1}</span>
                     <span className="text-morandi-text text-sm flex-1">{em.name}</span>
-                    <div className="flex gap-1">
+                    <div className="flex gap-1 items-center">
                       {Array.from({ length: em.count }).map((_, j) => (
-                        <div key={j} className="w-2 h-2 rounded-full bg-morandi-accent" />
+                        <div key={j} className="w-2 h-2 rounded-full bg-morandi-accent opacity-80" />
                       ))}
                     </div>
-                    <span className="text-morandi-subtle text-xs w-8 text-right">{em.count}次</span>
+                    <span className="text-morandi-subtle text-xs w-7 text-right shrink-0">{em.count}次</span>
                   </div>
                 ))}
               </div>
-            </Section>
+            </GlassCard>
           )}
 
           {/* Keywords */}
           {report.topKeywords.length > 0 && (
-            <Section title="本週關鍵詞">
+            <GlassCard title="本週關鍵詞">
               <div className="flex flex-wrap gap-2">
                 {report.topKeywords.map((kw, i) => (
                   <span
                     key={kw}
-                    className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
-                      i === 0
-                        ? 'bg-morandi-accent text-white border-morandi-accent'
-                        : i < 3
-                        ? 'bg-morandi-warm text-morandi-accent border-morandi-accent/30'
-                        : 'bg-morandi-surface text-morandi-muted border-morandi-border'
-                    }`}
+                    className="px-3 py-1.5 rounded-full text-xs font-medium border transition-all"
+                    style={i === 0
+                      ? { background: '#C4815A', color: '#fff', borderColor: '#C4815A' }
+                      : i < 3
+                      ? { background: 'rgba(196,129,90,0.12)', color: '#C4815A', borderColor: 'rgba(196,129,90,0.3)' }
+                      : { background: 'rgba(237,232,222,0.6)', color: '#786E66', borderColor: '#E5DDD3' }
+                    }
                   >
                     {kw}
                   </span>
                 ))}
               </div>
-            </Section>
+            </GlassCard>
           )}
 
           {/* Dream types */}
           {report.dreamTypeCounts.length > 0 && (
-            <Section title="夢境類型">
+            <GlassCard title="夢境類型">
               <div className="flex flex-wrap gap-2">
                 {report.dreamTypeCounts.map(tc => (
-                  <div key={tc.type} className="flex items-center gap-1.5 bg-morandi-bg px-3 py-1.5 rounded-full border border-morandi-border">
+                  <div
+                    key={tc.type}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-morandi-border bg-morandi-bg"
+                  >
                     <span className="text-morandi-text text-xs font-medium">{tc.type}</span>
                     <span className="text-morandi-subtle text-xs">{tc.count}</span>
                   </div>
                 ))}
               </div>
-            </Section>
+            </GlassCard>
           )}
         </>
       )}
@@ -304,20 +407,18 @@ export default function WeeklyReportPage() {
   );
 }
 
-function StatCard({ value, label, small }: { value: string; label: string; small?: boolean }) {
+function MiniStat({ value, label, small }: { value: string; label: string; small?: boolean }) {
   return (
-    <div className="bg-morandi-surface rounded-2xl p-3 border border-morandi-border shadow-morandi text-center">
-      <div className={`font-bold text-morandi-text ${small ? 'text-sm' : 'text-xl'} truncate`}>
-        {value}
-      </div>
-      <div className="text-morandi-subtle text-xs mt-0.5">{label}</div>
+    <div className="glass-morandi rounded-2xl p-3 shadow-morandi text-center">
+      <p className={`font-bold text-morandi-text truncate ${small ? 'text-sm' : 'text-xl'}`}>{value}</p>
+      <p className="text-morandi-subtle text-xs mt-0.5">{label}</p>
     </div>
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function GlassCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="bg-morandi-surface rounded-2xl p-4 border border-morandi-border shadow-morandi">
+    <div className="glass-morandi rounded-2xl p-4 shadow-morandi">
       <h2 className="text-morandi-text text-sm font-semibold mb-4">{title}</h2>
       {children}
     </div>

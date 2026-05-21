@@ -10,22 +10,80 @@ body {
   background-color: #EDE8DE;
   min-height: 100vh;
   color: #2C2825;
-  font-family: -apple-system, system-ui, 'Segoe UI', sans-serif;
+  font-family: -apple-system, system-ui, 'Segoe UI', 'PingFang TC', 'Noto Sans TC', sans-serif;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-::-webkit-scrollbar {
-  width: 4px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: #C8C0B4;
-  border-radius: 2px;
-}
+/* ── Scrollbar ──────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #C8C0B4; border-radius: 2px; }
 
+/* ── Date picker ─────────────────────────────────────────────────── */
 input[type="date"]::-webkit-calendar-picker-indicator {
   opacity: 0.4;
   cursor: pointer;
+}
+
+/* ── Glass utilities ────────────────────────────────────────────── */
+@layer utilities {
+  .glass {
+    background: rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+  }
+
+  .glass-light {
+    background: rgba(255, 255, 255, 0.55);
+    backdrop-filter: blur(16px) saturate(160%);
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.65);
+  }
+
+  .glass-morandi {
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(12px) saturate(140%);
+    -webkit-backdrop-filter: blur(12px) saturate(140%);
+    border: 1px solid rgba(229, 221, 211, 0.8);
+  }
+
+  .text-gradient-gold {
+    background: linear-gradient(135deg, #d4b87a, #c4a875, #e8d5a0);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .text-gradient-dream {
+    background: linear-gradient(135deg, #e8e4f2, #c4a875, #e8e4f2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .scrollbar-none {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .scrollbar-none::-webkit-scrollbar { display: none; }
+
+  .safe-pb {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+}
+
+/* ── Dream background ─────────────────────────────────────────── */
+.dream-bg {
+  background:
+    radial-gradient(ellipse at 20% 50%, rgba(130, 60, 220, 0.12) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 20%, rgba(50, 90, 220, 0.10) 0%, transparent 50%),
+    radial-gradient(ellipse at 60% 80%, rgba(196, 168, 117, 0.07) 0%, transparent 50%),
+    linear-gradient(135deg, #050810 0%, #0a0c1a 40%, #10102a 70%, #050810 100%);
+}
+
+/* ── Morandi page transition helper ─────────────────────────────── */
+.page-enter {
+  animation: slideUp 0.4s ease-out both;
 }
