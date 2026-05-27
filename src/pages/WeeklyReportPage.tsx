@@ -247,15 +247,23 @@ export default function WeeklyReportPage() {
   const daysUntilSunday = isCurrentWeek && !isSunday ? (7 - todayDow) % 7 : 0;
 
   useEffect(() => {
-    setReport(null);
     setError('');
     const cached = getCachedWeeklyReport(ws);
-    if (cached?.generated) { setReport(cached.reportData); return; }
-    // Auto-load: past weeks always, current week only on Sunday (may already be generated in DynamoDB)
+    const localCount = getDreams().filter(d => d.date >= ws && d.date <= we).length;
+    const cachedCount = cached?.reportData?.dreamCount ?? -1;
+
+    // Cache hit: use it directly if dream count hasn't grown since last generation
+    if (cached?.generated && localCount <= cachedCount) {
+      setReport(cached.reportData);
+      return;
+    }
+
+    // Need fresh data
+    setReport(null);
     const shouldAutoLoad = isApiConfigured() && isLoggedIn && (!isCurrentWeek || isSunday);
     if (shouldAutoLoad) {
       setLoading(true);
-      apiGetWeeklyReport(ws).then(data => {
+      apiGetWeeklyReport(ws, localCount).then(data => {
         if (data.dreamCount > 0 || !isCurrentWeek) {
           setCachedWeeklyReport(ws, { weekId, generated: true, generatedAt: new Date().toISOString(), reportData: data });
           setReport(data);
@@ -264,7 +272,7 @@ export default function WeeklyReportPage() {
         // silent — user can manually retry via button
       }).finally(() => setLoading(false));
     }
-  }, [ws, isCurrentWeek, isSunday, isLoggedIn, weekId]);
+  }, [ws, we, isCurrentWeek, isSunday, isLoggedIn, weekId]);
 
   const generate = useCallback(async () => {
     setError('');
@@ -272,7 +280,8 @@ export default function WeeklyReportPage() {
     try {
       let data: WeeklyReportData;
       if (isApiConfigured() && isLoggedIn) {
-        data = await apiGetWeeklyReport(ws);
+        const localCount = getDreams().filter(d => d.date >= ws && d.date <= we).length;
+        data = await apiGetWeeklyReport(ws, localCount);
       } else {
         data = buildLocal(ws, we);
       }

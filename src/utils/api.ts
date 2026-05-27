@@ -66,6 +66,8 @@ export async function apiGenerateTitle(
   return result.title;
 }
 
-export async function apiGetWeeklyReport(weekStart: string): Promise<WeeklyReportData> {
-  return req<WeeklyReportData>(`/weekly-report?weekStart=${weekStart}`);
+export async function apiGetWeeklyReport(weekStart: string, dreamCount?: number): Promise<WeeklyReportData> {
+  const params = new URLSearchParams({ weekStart });
+  if (dreamCount !== undefined) params.set('dreamCount', String(dreamCount));
+  return req<WeeklyReportData>(`/weekly-report?${params}`);
 }

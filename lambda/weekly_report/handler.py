@@ -71,13 +71,21 @@ def handler(event, context):
 
         # ── Check DynamoDB cache first ─────────────────────────────────────────
         cache_id = f'report_{week_start}'
+        client_count_str = params.get('dreamCount')
         cached = table.get_item(Key={'userId': user_id, 'id': cache_id}).get('Item')
         if cached and cached.get('reportData'):
-            report = cached['reportData']
-            return {
-                'statusCode': 200, 'headers': HEADERS,
-                'body': json.dumps(report, cls=DecimalEncoder, ensure_ascii=False)
-            }
+            cached_count = int(cached['reportData'].get('dreamCount', 0))
+            # Use cache only if client hasn't added new dreams since last generation
+            if client_count_str is None or int(client_count_str) <= cached_count:
+                return {
+                    'statusCode': 200, 'headers': HEADERS,
+                    'body': json.dumps(cached['reportData'], cls=DecimalEncoder, ensure_ascii=False)
+                }
+            # New dreams detected — delete stale cache and regenerate
+            try:
+                table.delete_item(Key={'userId': user_id, 'id': cache_id})
+            except Exception:
+                pass
 
         # ── Query user dreams for this week ────────────────────────────────────
         response = table.query(KeyConditionExpression=Key('userId').eq(user_id))

@@ -7,10 +7,7 @@ const WEEKLY_KEY_PREFIX = 'dream-weekly-';
 
 export function clearLocalDreams(): void {
   localStorage.removeItem(KEY);
-  // Also clear cached weekly reports
-  Object.keys(localStorage)
-    .filter(k => k.startsWith(WEEKLY_KEY_PREFIX))
-    .forEach(k => localStorage.removeItem(k));
+  // Weekly report caches are preserved across logout and invalidated per-week via saveDream
 }
 
 export function getCachedWeeklyReport(weekStart: string): WeeklyCacheEntry | null {
@@ -73,9 +70,17 @@ export function getDreams(): Dream[] {
   return localGetAll();
 }
 
+function getWeekStartForDate(dateStr: string): string {
+  const d = new Date(dateStr + 'T00:00:00');
+  d.setDate(d.getDate() - d.getDay());
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 export async function saveDream(dream: Dream): Promise<{ synced: boolean }> {
   if (!dream.content?.trim()) return { synced: false };
   localSave(dream);
+  // Invalidate weekly report cache so next view re-fetches with updated dream count
+  localStorage.removeItem(`${WEEKLY_KEY_PREFIX}${getWeekStartForDate(dream.date)}`);
   if (await isCloudAvailable()) {
     try {
       await apiSaveDream(dream);
