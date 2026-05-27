@@ -1,17 +1,18 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import {
   signIn, signUp, signOut,
-  getCurrentUserEmail, getIdToken, isConfigured,
+  getCurrentUserEmail, getIdToken, isConfigured, getUserNickname,
 } from '../utils/auth';
 import { clearLocalDreams } from '../utils/storage';
 
 interface AuthContextValue {
   email: string | null;
+  nickname: string | null;
   isLoggedIn: boolean;
   isCognitoConfigured: boolean;
   syncing: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string) => Promise<void>;
+  register: (email: string, password: string, nickname: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -19,20 +20,27 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [email, setEmail] = useState<string | null>(null);
+  const [nickname, setNickname] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
 
   useEffect(() => {
     if (!isConfigured()) return;
     const e = getCurrentUserEmail();
     if (!e) return;
-    getIdToken().then(token => {
-      if (token) setEmail(e);
+    getIdToken().then(async token => {
+      if (token) {
+        setEmail(e);
+        const n = await getUserNickname();
+        setNickname(n);
+      }
     });
   }, []);
 
   const login = async (e: string, password: string) => {
     await signIn(e, password);
     setEmail(e);
+    const n = await getUserNickname();
+    setNickname(n);
     setSyncing(true);
     try {
       const { syncFromCloud } = await import('../utils/storage');
@@ -44,19 +52,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const register = async (e: string, password: string) => {
-    await signUp(e, password);
+  const register = async (e: string, password: string, nick: string) => {
+    await signUp(e, password, nick);
   };
 
   const logout = () => {
     signOut();
     clearLocalDreams();
     setEmail(null);
+    setNickname(null);
   };
 
   return (
     <AuthContext.Provider value={{
       email,
+      nickname,
       isLoggedIn: !!email,
       isCognitoConfigured: isConfigured(),
       syncing,

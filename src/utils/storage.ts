@@ -1,4 +1,4 @@
-import type { Dream } from '../types';
+import type { Dream, WeeklyCacheEntry, WeeklyReportData } from '../types';
 import { apiSaveDream, apiDeleteDream, isApiConfigured } from './api';
 import { getIdToken } from './auth';
 
@@ -13,17 +13,28 @@ export function clearLocalDreams(): void {
     .forEach(k => localStorage.removeItem(k));
 }
 
-export function getCachedWeeklyReport(weekStart: string): object | null {
+export function getCachedWeeklyReport(weekStart: string): WeeklyCacheEntry | null {
   try {
     const raw = localStorage.getItem(`${WEEKLY_KEY_PREFIX}${weekStart}`);
-    return raw ? JSON.parse(raw) : null;
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    // Migrate old format (direct WeeklyReportData without wrapper)
+    if (parsed.weekStart && !parsed.reportData) {
+      return {
+        weekId: weekStart,
+        generated: true,
+        generatedAt: parsed.generatedAt || new Date().toISOString(),
+        reportData: parsed as WeeklyReportData,
+      };
+    }
+    return parsed as WeeklyCacheEntry;
   } catch {
     return null;
   }
 }
 
-export function setCachedWeeklyReport(weekStart: string, data: object): void {
-  localStorage.setItem(`${WEEKLY_KEY_PREFIX}${weekStart}`, JSON.stringify(data));
+export function setCachedWeeklyReport(weekStart: string, entry: WeeklyCacheEntry): void {
+  localStorage.setItem(`${WEEKLY_KEY_PREFIX}${weekStart}`, JSON.stringify(entry));
 }
 
 // ── Local storage (always available) ─────────────────────────────────────────
@@ -63,6 +74,7 @@ export function getDreams(): Dream[] {
 }
 
 export async function saveDream(dream: Dream): Promise<{ synced: boolean }> {
+  if (!dream.content?.trim()) return { synced: false };
   localSave(dream);
   if (await isCloudAvailable()) {
     try {
@@ -91,7 +103,7 @@ export async function syncFromCloud(): Promise<Dream[]> {
   const local = localGetAll();
   const cloudIds = new Set(cloudDreams.map(d => d.id));
   const localOnly = local.filter(d => !cloudIds.has(d.id));
-  const merged = [...cloudDreams, ...localOnly];
+  const merged = [...cloudDreams, ...localOnly].filter(d => d.content?.trim());
   localStorage.setItem(KEY, JSON.stringify(merged));
   return merged;
 }

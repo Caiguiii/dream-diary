@@ -8,6 +8,11 @@
 
 body {
   background-color: #EDE8DE;
+  background-image:
+    radial-gradient(ellipse at 5% 10%, rgba(196, 168, 117, 0.06) 0%, transparent 55%),
+    radial-gradient(ellipse at 95% 90%, rgba(196, 129, 90, 0.05) 0%, transparent 55%),
+    radial-gradient(ellipse at 50% 50%, rgba(196, 168, 117, 0.03) 0%, transparent 70%);
+  background-attachment: fixed;
   min-height: 100vh;
   color: #2C2825;
   font-family: -apple-system, system-ui, 'Segoe UI', 'PingFang TC', 'Noto Sans TC', sans-serif;
@@ -47,6 +52,14 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     backdrop-filter: blur(12px) saturate(140%);
     -webkit-backdrop-filter: blur(12px) saturate(140%);
     border: 1px solid rgba(229, 221, 211, 0.8);
+  }
+
+  .glass-morandi-strong {
+    background: rgba(255, 255, 255, 0.82);
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    border: 1px solid rgba(229, 221, 211, 0.9);
+    box-shadow: 0 4px 24px rgba(44, 40, 37, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.9);
   }
 
   .text-gradient-gold {

@@ -41,15 +41,33 @@ export async function signIn(email: string, password: string): Promise<void> {
   });
 }
 
-export async function signUp(email: string, password: string): Promise<void> {
+export async function signUp(email: string, password: string, nickname: string): Promise<void> {
   return new Promise((resolve, reject) => {
     getPool().signUp(
       email,
       password,
-      [new CognitoUserAttribute({ Name: 'email', Value: email })],
+      [
+        new CognitoUserAttribute({ Name: 'email', Value: email }),
+        new CognitoUserAttribute({ Name: 'nickname', Value: nickname }),
+      ],
       [],
       err => (err ? reject(err) : resolve())
     );
+  });
+}
+
+export function getUserNickname(): Promise<string | null> {
+  return new Promise(resolve => {
+    const user = getPool().getCurrentUser();
+    if (!user) return resolve(null);
+    user.getSession((err: Error | null, session: { isValid: () => boolean } | null) => {
+      if (err || !session?.isValid()) return resolve(null);
+      user.getUserAttributes((attrErr, attrs) => {
+        if (attrErr || !attrs) return resolve(null);
+        const attr = attrs.find(a => a.getName() === 'nickname');
+        resolve(attr?.getValue() ?? null);
+      });
+    });
   });
 }
 

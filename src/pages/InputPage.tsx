@@ -23,6 +23,27 @@ const CLARITY_OPTIONS: { value: Clarity; label: string }[] = [
 
 const DREAM_TYPES = ['日常', '奇幻', '驚悚', '懷舊', '浪漫', '冒險', '靈異', '其他'];
 
+const CUSTOM_TYPES_KEY = 'dream-custom-types';
+function loadCustomTypes(): string[] {
+  try { return JSON.parse(localStorage.getItem(CUSTOM_TYPES_KEY) || '[]'); }
+  catch { return []; }
+}
+function saveCustomType(type: string): string[] {
+  const types = loadCustomTypes();
+  if (!types.includes(type)) { types.push(type); localStorage.setItem(CUSTOM_TYPES_KEY, JSON.stringify(types)); }
+  return types;
+}
+function deleteCustomType(type: string): string[] {
+  const types = loadCustomTypes().filter(t => t !== type);
+  localStorage.setItem(CUSTOM_TYPES_KEY, JSON.stringify(types));
+  return types;
+}
+
+function localToday(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 
 type Step = 'form' | 'title-preview';
@@ -39,13 +60,33 @@ export default function InputPage() {
 
   const [form, setForm] = useState({
     content: '',
-    date: new Date().toISOString().split('T')[0],
+    date: localToday(),
     mood: '',
     clarity: 'normal' as Clarity,
     dreamType: '',
   });
 
-  // Pending dream waiting for title confirmation
+  const [customTypes, setCustomTypes] = useState<string[]>(() => loadCustomTypes());
+  const [addingType, setAddingType] = useState(false);
+  const [newTypeInput, setNewTypeInput] = useState('');
+
+  const handleAddType = () => {
+    const t = newTypeInput.trim();
+    if (t) {
+      const updated = saveCustomType(t);
+      setCustomTypes(updated);
+      set('dreamType', t);
+    }
+    setAddingType(false);
+    setNewTypeInput('');
+  };
+
+  const handleDeleteType = (type: string) => {
+    const updated = deleteCustomType(type);
+    setCustomTypes(updated);
+    if (form.dreamType === type) set('dreamType', '');
+  };
+
   const [pendingDream, setPendingDream] = useState<Dream | null>(null);
   const [aiTitle, setAiTitle] = useState('');
   const [editingTitle, setEditingTitle] = useState(false);
@@ -108,16 +149,16 @@ export default function InputPage() {
 
   if (step === 'title-preview' && pendingDream) {
     return (
-      <div className="py-4 space-y-5 animate-fadeIn">
+      <div className="py-4 space-y-5 animate-fade-in">
         <div>
           <h1 className="text-2xl font-bold text-morandi-text">AI 生成標題</h1>
           <p className="text-morandi-muted text-sm mt-1">可以編輯或重新生成標題</p>
         </div>
 
         {/* Title card */}
-        <div className="bg-morandi-surface rounded-2xl p-5 border border-morandi-border shadow-morandi-md">
+        <div className="glass-morandi-strong rounded-2xl p-5 shadow-morandi-md">
           <div className="flex items-start justify-between gap-3 mb-4">
-            <div className="w-8 h-8 rounded-full bg-morandi-warm flex items-center justify-center text-lg shrink-0">
+            <div className="w-8 h-8 rounded-full bg-morandi-warm border border-morandi-accent/20 flex items-center justify-center text-lg shrink-0">
               ✨
             </div>
             <span className="text-morandi-subtle text-xs self-center">AI 生成標題</span>
@@ -145,7 +186,7 @@ export default function InputPage() {
           <div className="flex gap-2 mt-4">
             <button
               onClick={() => setEditingTitle(true)}
-              className="text-xs text-morandi-subtle hover:text-morandi-muted border border-morandi-border px-3 py-1.5 rounded-full transition-colors"
+              className="text-xs text-morandi-subtle hover:text-morandi-muted glass-morandi px-3 py-1.5 rounded-full transition-all"
             >
               手動編輯
             </button>
@@ -153,7 +194,7 @@ export default function InputPage() {
               <button
                 onClick={handleRegenTitle}
                 disabled={regenLoading}
-                className="text-xs text-morandi-accent hover:text-morandi-accent/80 border border-morandi-accent/30 px-3 py-1.5 rounded-full transition-colors disabled:opacity-40 flex items-center gap-1"
+                className="text-xs text-morandi-accent hover:text-morandi-accent/80 border border-morandi-accent/30 bg-morandi-warm px-3 py-1.5 rounded-full transition-all disabled:opacity-40 flex items-center gap-1"
               >
                 {regenLoading ? <Spinner /> : '↻'} 重新生成
               </button>
@@ -162,7 +203,7 @@ export default function InputPage() {
         </div>
 
         {/* Dream preview */}
-        <div className="bg-morandi-surface rounded-2xl p-4 border border-morandi-border shadow-morandi">
+        <div className="glass-morandi rounded-2xl p-4 shadow-morandi">
           <p className="text-morandi-subtle text-xs mb-2">夢境內容預覽</p>
           <p className="text-morandi-muted text-sm line-clamp-3 leading-relaxed">
             {form.content}
@@ -187,13 +228,14 @@ export default function InputPage() {
         <div className="flex gap-3">
           <button
             onClick={() => setStep('form')}
-            className="flex-1 py-3.5 rounded-full border border-morandi-border text-morandi-muted text-sm font-medium hover:bg-morandi-surface transition-all"
+            className="flex-1 py-3.5 rounded-full glass-morandi text-morandi-muted text-sm font-medium hover:text-morandi-text transition-all"
           >
             ← 返回修改
           </button>
           <button
             onClick={handleSave}
-            className="flex-2 flex-grow py-3.5 rounded-full bg-morandi-accent text-white font-semibold text-sm hover:bg-morandi-accent/90 transition-all shadow-morandi active:scale-[0.98]"
+            className="flex-[2] py-3.5 rounded-full bg-morandi-accent text-white font-semibold text-sm hover:bg-morandi-accent/90 transition-all shadow-morandi active:scale-[0.98]"
+            style={{ boxShadow: '0 4px 16px rgba(196,129,90,0.3)' }}
           >
             儲存並查看分析 →
           </button>
@@ -213,7 +255,7 @@ export default function InputPage() {
         <textarea
           value={form.content}
           onChange={e => set('content', e.target.value)}
-          placeholder="描述你的夢境內容... AI 會自動生成詩意標題"
+          placeholder="描述你的夢境內容… AI 會自動生成詩意標題"
           rows={7}
           className={`${inputClass} resize-none`}
           required
@@ -235,8 +277,8 @@ export default function InputPage() {
                 onClick={() => set('clarity', c.value)}
                 className={`px-3 py-3 rounded-2xl text-sm transition-all ${
                   form.clarity === c.value
-                    ? 'bg-morandi-accent text-white font-medium'
-                    : 'bg-morandi-surface text-morandi-muted border border-morandi-border'
+                    ? 'bg-morandi-accent text-white font-medium shadow-morandi'
+                    : 'glass-morandi text-morandi-muted hover:text-morandi-text'
                 }`}
               >
                 {c.label}
@@ -260,8 +302,8 @@ export default function InputPage() {
                   title={m.label}
                   className={`w-11 h-11 rounded-full text-xl flex items-center justify-center transition-all ${
                     active
-                      ? 'bg-morandi-accent ring-2 ring-morandi-accent ring-offset-2 ring-offset-morandi-bg'
-                      : 'bg-morandi-surface border border-morandi-border hover:border-morandi-accent/50'
+                      ? 'bg-morandi-accent ring-2 ring-morandi-accent ring-offset-2 ring-offset-morandi-bg shadow-morandi'
+                      : 'glass-morandi hover:border-morandi-accent/50'
                   }`}
                 >
                   {m.emoji}
@@ -282,18 +324,80 @@ export default function InputPage() {
                 onClick={() => set('dreamType', form.dreamType === type ? '' : type)}
                 className={`px-4 py-2 rounded-full text-sm transition-all ${
                   form.dreamType === type
-                    ? 'bg-morandi-accent text-white font-medium'
-                    : 'bg-morandi-surface text-morandi-muted border border-morandi-border hover:border-morandi-accent/50'
+                    ? 'bg-morandi-accent text-white font-medium shadow-morandi'
+                    : 'glass-morandi text-morandi-muted hover:text-morandi-accent hover:border-morandi-accent/40'
                 }`}
               >
                 {type}
               </button>
             ))}
+            {customTypes.map(type => {
+              const active = form.dreamType === type;
+              return (
+                <div
+                  key={type}
+                  className={`flex items-center gap-1 rounded-full text-sm transition-all ${
+                    active
+                      ? 'bg-morandi-accent text-white font-medium shadow-morandi'
+                      : 'glass-morandi text-morandi-muted'
+                  }`}
+                >
+                  <button
+                    type="button"
+                    onClick={() => set('dreamType', active ? '' : type)}
+                    className="pl-4 pr-2 py-2"
+                  >
+                    {type}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteType(type)}
+                    className={`pr-3 py-2 leading-none opacity-60 hover:opacity-100 transition-opacity ${active ? 'text-white' : 'text-morandi-muted'}`}
+                    title="刪除"
+                  >
+                    ×
+                  </button>
+                </div>
+              );
+            })}
+            {addingType ? (
+              <div className="flex gap-2 items-center w-full mt-1">
+                <input
+                  autoFocus
+                  type="text"
+                  value={newTypeInput}
+                  onChange={e => setNewTypeInput(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') { e.preventDefault(); handleAddType(); }
+                    if (e.key === 'Escape') { setAddingType(false); setNewTypeInput(''); }
+                  }}
+                  placeholder="輸入自訂類型…"
+                  maxLength={8}
+                  className="flex-1 glass-morandi rounded-xl px-3 py-2.5 text-sm text-morandi-text placeholder-morandi-subtle focus:outline-none focus:ring-2 focus:ring-morandi-accent/20 transition-all"
+                />
+                <button type="button" onClick={handleAddType}
+                  className="px-3 py-2.5 rounded-xl bg-morandi-accent text-white text-xs font-medium hover:bg-morandi-accent/90 transition-all">
+                  確認
+                </button>
+                <button type="button" onClick={() => { setAddingType(false); setNewTypeInput(''); }}
+                  className="px-3 py-2.5 rounded-xl glass-morandi text-morandi-muted text-xs transition-all">
+                  取消
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setAddingType(true)}
+                className="px-4 py-2 rounded-full text-sm transition-all border border-dashed border-morandi-accent/40 text-morandi-accent hover:bg-morandi-warm"
+              >
+                + 自訂
+              </button>
+            )}
           </div>
         </div>
 
         {error && (
-          <div className="bg-morandi-error/10 border border-morandi-error/25 rounded-2xl p-3 text-morandi-error text-sm">
+          <div className="glass-morandi border border-morandi-error/25 rounded-2xl p-3 text-morandi-error text-sm shadow-morandi">
             {error}
           </div>
         )}
@@ -301,7 +405,8 @@ export default function InputPage() {
         <button
           type="submit"
           disabled={loading || !form.content.trim()}
-          className="w-full py-4 rounded-full bg-morandi-accent text-white font-semibold text-base disabled:opacity-40 hover:bg-morandi-accent/90 transition-all shadow-morandi active:scale-[0.98]"
+          className="w-full py-4 rounded-full bg-morandi-accent text-white font-semibold text-base disabled:opacity-40 hover:bg-morandi-accent/90 transition-all active:scale-[0.98]"
+          style={{ boxShadow: '0 4px 20px rgba(196,129,90,0.28)' }}
         >
           {loading ? (
             <span className="flex items-center justify-center gap-2">
@@ -338,4 +443,4 @@ function Spinner() {
 }
 
 const inputClass =
-  'w-full bg-morandi-surface border border-morandi-border rounded-2xl px-4 py-3 text-morandi-text placeholder-morandi-subtle focus:outline-none focus:border-morandi-accent/50 focus:ring-2 focus:ring-morandi-accent/10 transition-all shadow-morandi';
+  'w-full glass-morandi rounded-2xl px-4 py-3 text-morandi-text placeholder-morandi-subtle focus:outline-none focus:border-morandi-accent/50 focus:ring-2 focus:ring-morandi-accent/10 transition-all shadow-morandi';

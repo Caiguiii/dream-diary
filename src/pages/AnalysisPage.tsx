@@ -63,7 +63,8 @@ export default function AnalysisPage() {
   const maxEmotion = analysis?.emotions[0]?.percentage ?? 100;
 
   return (
-    <div className="py-4 space-y-4">
+    <div className="py-4 space-y-4 page-enter">
+
       {/* Back header */}
       <div className="flex items-center justify-between">
         <button
@@ -108,13 +109,12 @@ export default function AnalysisPage() {
             </h1>
           )}
 
-          {/* Regen title button */}
           {isApiConfigured() && !editingTitle && (
             <button
               onClick={handleRegenTitle}
               disabled={regenLoading}
               title="重新生成標題"
-              className="shrink-0 mt-0.5 text-morandi-subtle hover:text-morandi-accent text-xs border border-morandi-border px-2 py-1 rounded-full transition-colors disabled:opacity-40 flex items-center gap-1"
+              className="shrink-0 mt-0.5 text-morandi-subtle hover:text-morandi-accent text-xs glass-morandi px-2 py-1 rounded-full transition-all disabled:opacity-40 flex items-center gap-1 shadow-morandi"
             >
               {regenLoading ? <Spinner /> : '↻'} 重生成
             </button>
@@ -171,9 +171,9 @@ export default function AnalysisPage() {
                     <span className="text-morandi-text text-sm">{em.name}</span>
                     <span className="text-morandi-accent text-sm font-medium">{em.percentage}%</span>
                   </div>
-                  <div className="h-2 bg-morandi-bg rounded-full overflow-hidden">
+                  <div className="h-1.5 bg-morandi-bg rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-morandi-accent rounded-full transition-all duration-500"
+                      className="h-full bg-morandi-accent rounded-full animate-data-load"
                       style={{ width: `${(em.percentage / maxEmotion) * 100}%` }}
                     />
                   </div>
@@ -183,10 +183,10 @@ export default function AnalysisPage() {
           </Card>
 
           <Card title="象徵元素">
-            <div className="divide-y divide-morandi-border">
+            <div className="divide-y divide-morandi-border/60">
               {analysis.symbols.map((s, i) => (
                 <div key={s.symbol} className="flex items-start gap-3 py-3 first:pt-0 last:pb-0">
-                  <div className="w-10 h-10 rounded-full bg-morandi-surface2 border border-morandi-border flex items-center justify-center text-morandi-muted text-xs font-medium shrink-0">
+                  <div className="w-9 h-9 rounded-full bg-morandi-warm border border-morandi-accent/15 flex items-center justify-center text-morandi-accent text-xs font-bold shrink-0">
                     {i + 1}
                   </div>
                   <div className="flex-1 min-w-0 pt-0.5">
@@ -202,7 +202,7 @@ export default function AnalysisPage() {
             <h3 className="text-morandi-muted text-xs font-medium uppercase tracking-wider mb-3">關鍵字</h3>
             <div className="flex flex-wrap gap-2">
               {analysis.keywords.map(k => (
-                <span key={k} className="px-3 py-1.5 rounded-full bg-morandi-surface border border-morandi-border text-morandi-muted text-xs shadow-morandi">
+                <span key={k} className="px-3 py-1.5 rounded-full glass-morandi text-morandi-muted text-xs shadow-morandi">
                   {k}
                 </span>
               ))}
@@ -220,7 +220,7 @@ export default function AnalysisPage() {
 
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="bg-morandi-surface rounded-2xl p-4 border border-morandi-border shadow-morandi">
+    <div className="glass-morandi rounded-2xl p-4 shadow-morandi-md">
       <h2 className="text-morandi-text text-sm font-semibold mb-3">{title}</h2>
       {children}
     </div>
@@ -237,4 +237,4 @@ function Spinner() {
 }
 
 const btnClass =
-  'block w-full py-3.5 rounded-full bg-morandi-accent text-white text-sm font-semibold text-center hover:bg-morandi-accent/90 transition-all shadow-morandi';
+  'block w-full py-3.5 rounded-full bg-morandi-accent text-white text-sm font-semibold text-center hover:bg-morandi-accent/90 transition-all active:scale-[0.98]';

@@ -14,17 +14,21 @@ const WEEKDAYS = ['日', '一', '二', '三', '四', '五', '六'];
 function getWeekStart(): Date {
   const d = new Date();
   d.setHours(0, 0, 0, 0);
-  d.setDate(d.getDate() - d.getDay()); // Sunday-based week
+  const day = d.getDay();
+  d.setDate(d.getDate() - (day === 0 ? 6 : day - 1));
   return d;
 }
 
 function formatDate(d: Date): string {
-  return d.toISOString().split('T')[0];
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
 }
 
 export default function HomePage() {
   const navigate = useNavigate();
-  const { email, isLoggedIn, isCognitoConfigured } = useAuth();
+  const { email, nickname, isLoggedIn, isCognitoConfigured } = useAuth();
   const allDreams = useMemo(() => getDreams(), []);
 
   const weekStart = useMemo(() => getWeekStart(), []);
@@ -40,7 +44,6 @@ export default function HomePage() {
     return allDreams.filter(d => d.date >= start && d.date <= end);
   }, [allDreams, weekStart, weekEnd]);
 
-  // Build 7-day grid for this week
   const weekGrid = useMemo(() => {
     return Array.from({ length: 7 }, (_, i) => {
       const d = new Date(weekStart);
@@ -56,14 +59,16 @@ export default function HomePage() {
       .filter(g => g.dream?.mood)
       .map(g => MOOD_SCORE[g.dream!.mood] ?? 3);
     if (scores.length === 0) return null;
-    const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
-    return avg;
+    return scores.reduce((a, b) => a + b, 0) / scores.length;
   }, [weekGrid]);
 
   const recentDreams = useMemo(() => allDreams.slice(0, 3), [allDreams]);
+  const todayStr = formatDate(new Date());
+  const todayEntry = useMemo(() => weekGrid.find(g => g.dateStr === todayStr), [weekGrid, todayStr]);
 
   const totalCount = allDreams.length;
   const weekCount = weekDreams.length;
+  const weekDays = useMemo(() => new Set(weekDreams.map(d => d.date)).size, [weekDreams]);
 
   const greeting = useMemo(() => {
     const h = new Date().getHours();
@@ -82,44 +87,48 @@ export default function HomePage() {
 
   return (
     <div className="py-4 space-y-5">
+
       {/* Greeting */}
       <div>
         <p className="text-morandi-subtle text-sm">{greeting}</p>
         <h1 className="text-2xl font-bold text-morandi-text mt-1">
-          {isLoggedIn && email ? email.split('@')[0] + ' 的夢境空間' : '我的夢境空間'}
+          {isLoggedIn && (nickname || email) ? (nickname || email!.split('@')[0]) + ' 的夢境空間' : '我的夢境空間'}
         </h1>
       </div>
 
       {/* Weekly mood card */}
-      <div className="bg-morandi-surface rounded-2xl p-4 border border-morandi-border shadow-morandi">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-morandi-text text-sm font-semibold">本週心情紀錄</h2>
-          <span className="text-morandi-subtle text-xs">{moodLabel}</span>
+      <div className="glass-morandi rounded-2xl p-4 shadow-morandi-md">
+        <div className="flex items-center gap-3 mb-4 pb-3.5" style={{ borderBottom: '1px solid rgba(229,221,211,0.55)' }}>
+          <div className="text-4xl leading-none select-none">
+            {todayEntry?.dream?.mood?.split(' ')[0] ?? '🌙'}
+          </div>
+          <div className="flex-1 min-w-0">
+            <h2 className="text-morandi-text text-sm font-semibold">今日心情</h2>
+            <p className="text-morandi-subtle text-xs mt-0.5 truncate">
+              {todayEntry?.dream?.mood?.split(' ')[1]
+                ? todayEntry.dream!.mood.split(' ')[1]
+                : '尚未記錄今日夢境'}
+            </p>
+          </div>
+          <span className="text-morandi-subtle text-xs shrink-0">{moodLabel}</span>
         </div>
 
         {/* 7-day grid */}
         <div className="grid grid-cols-7 gap-1.5">
           {weekGrid.map(({ date, dateStr, dream, dayLabel }) => {
             const isToday = formatDate(new Date()) === dateStr;
-            const moodScore = dream?.mood ? (MOOD_SCORE[dream.mood] ?? 3) : 0;
             const hasDream = !!dream;
             return (
               <div key={dateStr} className="flex flex-col items-center gap-1">
                 <span className="text-morandi-subtle text-xs">{dayLabel}</span>
                 <button
                   onClick={() => hasDream ? navigate(`/analysis/${dream!.id}`) : navigate('/input')}
-                  className={`w-9 h-9 rounded-xl flex items-center justify-center text-sm transition-all ${
-                    isToday
-                      ? 'ring-2 ring-morandi-accent ring-offset-1 ring-offset-morandi-bg'
-                      : ''
+                  className={`w-9 h-9 rounded-xl flex items-center justify-center text-sm transition-all active:scale-95 ${
+                    isToday ? 'ring-2 ring-morandi-accent ring-offset-2 ring-offset-white' : ''
                   } ${
                     hasDream
-                      ? moodScore >= 4
-                        ? 'bg-morandi-accent text-white'
-                        : moodScore >= 2
-                        ? 'bg-morandi-warm border border-morandi-accent/30 text-morandi-accent'
-                        : 'bg-morandi-surface2 border border-morandi-border text-morandi-muted'
-                      : 'bg-morandi-bg border border-dashed border-morandi-border text-morandi-subtle hover:border-morandi-accent/40'
+                      ? 'bg-morandi-warm border border-morandi-accent/30 text-morandi-accent shadow-morandi'
+                      : 'bg-morandi-bg border border-dashed border-morandi-border/70 text-morandi-subtle hover:border-morandi-accent/40 hover:bg-morandi-warm'
                   }`}
                 >
                   {hasDream ? (dream!.mood?.split(' ')[0] ?? '🌙') : date.getDate()}
@@ -131,22 +140,22 @@ export default function HomePage() {
         </div>
 
         {/* Stats row */}
-        <div className="flex gap-3 mt-4 pt-4 border-t border-morandi-border">
+        <div className="flex gap-3 mt-4 pt-4 border-t border-morandi-border/60">
           <div className="flex-1 text-center">
             <p className="text-xl font-bold text-morandi-text">{weekCount}</p>
             <p className="text-morandi-subtle text-xs">本週記錄</p>
           </div>
-          <div className="w-px bg-morandi-border" />
+          <div className="w-px bg-morandi-border/60" />
           <div className="flex-1 text-center">
             <p className="text-xl font-bold text-morandi-text">{totalCount}</p>
             <p className="text-morandi-subtle text-xs">累計夢境</p>
           </div>
-          <div className="w-px bg-morandi-border" />
+          <div className="w-px bg-morandi-border/60" />
           <div className="flex-1 text-center">
             <p className="text-xl font-bold text-morandi-accent">
-              {weekCount > 0 ? Math.round((weekCount / 7) * 100) + '%' : '0%'}
+              {weekDays}<span className="text-sm font-medium text-morandi-subtle">/7</span>
             </p>
-            <p className="text-morandi-subtle text-xs">本週完成率</p>
+            <p className="text-morandi-subtle text-xs">本週天數</p>
           </div>
         </div>
       </div>
@@ -155,15 +164,20 @@ export default function HomePage() {
       <div className="grid grid-cols-2 gap-3">
         <button
           onClick={() => navigate('/input')}
-          className="bg-morandi-accent text-white rounded-2xl p-4 text-left shadow-morandi hover:bg-morandi-accent/90 transition-all active:scale-[0.98]"
+          className="rounded-2xl p-4 text-left shadow-morandi-md transition-all active:scale-[0.97]"
+          style={{
+            background: 'linear-gradient(135deg, #C4815A, #b8714e)',
+            boxShadow: '0 4px 20px rgba(196,129,90,0.28)',
+          }}
         >
           <div className="text-2xl mb-2">✍️</div>
-          <p className="font-semibold text-sm">記錄夢境</p>
-          <p className="text-white/70 text-xs mt-0.5">寫下今天的夢</p>
+          <p className="font-semibold text-sm text-white">記錄夢境</p>
+          <p className="text-white/65 text-xs mt-0.5">寫下今天的夢</p>
         </button>
         <button
           onClick={() => navigate('/weekly')}
-          className="bg-morandi-surface border border-morandi-border rounded-2xl p-4 text-left shadow-morandi hover:border-morandi-accent/30 hover:shadow-morandi-md transition-all active:scale-[0.98]"
+          className="glass-morandi rounded-2xl p-4 text-left shadow-morandi-md hover:shadow-morandi transition-all active:scale-[0.97]"
+          style={{ border: '1px solid rgba(196,168,117,0.25)' }}
         >
           <div className="text-2xl mb-2">📖</div>
           <p className="font-semibold text-sm text-morandi-text">夢境週報</p>
@@ -203,7 +217,7 @@ export default function HomePage() {
           <p className="text-morandi-subtle text-xs mt-1">每個夢境都是靈魂的低語</p>
           <button
             onClick={() => navigate('/input')}
-            className="mt-5 px-6 py-3 rounded-full bg-morandi-accent text-white text-sm font-medium hover:bg-morandi-accent/90 transition-all shadow-morandi"
+            className="mt-5 px-6 py-3 rounded-full bg-morandi-accent text-white text-sm font-medium hover:bg-morandi-accent/90 transition-all shadow-morandi active:scale-[0.98]"
           >
             記錄第一個夢境 ✨
           </button>
@@ -212,11 +226,14 @@ export default function HomePage() {
 
       {/* Login prompt */}
       {isCognitoConfigured && !isLoggedIn && totalCount > 0 && (
-        <div className="bg-morandi-warm border border-morandi-accent/20 rounded-2xl p-4 text-center">
+        <div
+          className="glass-morandi rounded-2xl p-4 text-center shadow-morandi"
+          style={{ border: '1px solid rgba(196,168,117,0.2)' }}
+        >
           <p className="text-morandi-muted text-sm">登入後可同步到雲端，跨裝置存取你的夢境</p>
           <button
             onClick={() => navigate('/login')}
-            className="mt-3 px-5 py-2 rounded-full bg-morandi-accent text-white text-xs font-medium hover:bg-morandi-accent/90 transition-all"
+            className="mt-3 px-5 py-2 rounded-full bg-morandi-accent text-white text-xs font-medium hover:bg-morandi-accent/90 transition-all shadow-morandi active:scale-[0.98]"
           >
             登入帳號
           </button>
@@ -230,16 +247,17 @@ function RecentDreamCard({ dream, onClick }: { dream: Dream; onClick: () => void
   return (
     <div
       onClick={onClick}
-      className="bg-morandi-surface rounded-2xl p-3.5 border border-morandi-border shadow-morandi hover:shadow-morandi-md hover:border-morandi-accent/30 transition-all cursor-pointer flex gap-3 items-start"
+      className="glass-morandi rounded-2xl p-3.5 shadow-morandi hover:shadow-morandi-md transition-all cursor-pointer flex gap-3 items-start active:scale-[0.99]"
+      style={{ borderColor: 'rgba(229,221,211,0.7)' }}
     >
-      <div className="w-10 h-10 rounded-xl bg-morandi-warm border border-morandi-accent/20 flex items-center justify-center text-lg shrink-0">
+      <div className="w-10 h-10 rounded-xl bg-morandi-warm border border-morandi-accent/15 flex items-center justify-center text-lg shrink-0">
         {dream.mood?.split(' ')[0] ?? '🌙'}
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-morandi-text text-sm font-semibold truncate">
           {dream.title || '無題夢境'}
         </p>
-        <p className="text-morandi-subtle text-xs line-clamp-1 mt-0.5">
+        <p className="text-morandi-subtle text-xs line-clamp-1 mt-0.5 leading-relaxed">
           {dream.content}
         </p>
         <div className="flex items-center gap-2 mt-1.5">

@@ -1,0 +1,392 @@
+import type { Dream } from '../types';
+
+const KEY = 'dream-journal-v1';
+
+const SEED_DREAMS: Dream[] = [
+  {
+    id: 'seed-01',
+    title: '雲端上的玻璃城市',
+    content: '我站在一座懸浮於雲層之上的城市，四周是透明玻璃建築，陽光折射出彩虹色的光芒。街道上沒有人，只有風在吹動薄薄的白色窗簾。我往前走，每一步都發出清脆的回響，突然地板開始緩緩旋轉，城市開始下沉，但我一點都不害怕，反而感到無比自由。',
+    date: '2026-05-27',
+    mood: '😊 愉快',
+    clarity: 'clear',
+    dreamType: '奇幻',
+    createdAt: '2026-05-27T07:12:00.000Z',
+    analysis: {
+      summary: '夢境呈現對自由與超脫現實的嚮往，懸浮城市象徵脫離日常束縛的渴望。',
+      zhougongInterpretation: '夢見高處城市，主近期將有好事降臨，事業運旺盛。',
+      themes: ['自由', '孤獨', '超現實'],
+      emotions: [
+        { name: '輕盈', percentage: 0.45 },
+        { name: '好奇', percentage: 0.35 },
+        { name: '平靜', percentage: 0.20 },
+      ],
+      symbols: [
+        { symbol: '玻璃城市', meaning: '透明度與脆弱性，渴望被看見卻又恐懼暴露' },
+        { symbol: '旋轉地板', meaning: '生活失去穩定感，但內心已然接受變化' },
+      ],
+      keywords: ['玻璃', '城市', '雲端', '旋轉', '自由', '陽光'],
+    },
+  },
+  {
+    id: 'seed-02',
+    title: '回到老家廚房的味道',
+    content: '夢到回到小時候住的老家，廚房裡瀰漫著熟悉的蔥油香。媽媽站在爐台前炒菜，背影和記憶中一模一樣。我坐在木頭椅子上，看著窗外的院子，那棵老榕樹還在。一切都沒有變，時間好像停在那個下午。醒來眼角有些濕潤。',
+    date: '2026-05-25',
+    mood: '😢 悲傷',
+    clarity: 'normal',
+    dreamType: '懷舊',
+    createdAt: '2026-05-25T06:30:00.000Z',
+    analysis: {
+      summary: '強烈的懷舊情感夢境，反映對童年家庭溫暖的思念與對時光流逝的感慨。',
+      zhougongInterpretation: '夢見故鄉，主思念之情深，近期可能有家人相關的消息。',
+      themes: ['思念', '家庭', '童年記憶'],
+      emotions: [
+        { name: '思念', percentage: 0.50 },
+        { name: '溫暖', percentage: 0.30 },
+        { name: '惆悵', percentage: 0.20 },
+      ],
+      symbols: [
+        { symbol: '廚房', meaning: '家的核心，安全感與被照顧的需求' },
+        { symbol: '老榕樹', meaning: '根源與歸屬感，永恆不變的情感連結' },
+      ],
+      keywords: ['老家', '廚房', '媽媽', '榕樹', '童年', '溫暖'],
+    },
+  },
+  {
+    id: 'seed-03',
+    title: '深夜圖書館的追逐',
+    content: '深夜一個人在圖書館找書，燈光忽明忽暗。走廊變得越來越長，書架愈來愈高，感覺有什麼東西在跟著我。我加快腳步，書架開始倒下，聲音越來越近，我拼命跑卻感覺腳步沉重如鉛，怎麼也跑不快。最後鑽進一個書架後面，屏住呼吸，聲音停了，但更可怕的寂靜降臨。',
+    date: '2026-05-23',
+    mood: '😨 害怕',
+    clarity: 'fuzzy',
+    dreamType: '驚悚',
+    createdAt: '2026-05-23T03:44:00.000Z',
+    analysis: {
+      summary: '典型焦慮夢境，無法逃跑的感覺反映現實中面臨的壓力與逃避心理。',
+      zhougongInterpretation: '夢見被追逐，主近期壓力過大，需調整休息，注意身心狀態。',
+      themes: ['逃跑', '焦慮', '黑暗'],
+      emotions: [
+        { name: '恐懼', percentage: 0.55 },
+        { name: '焦慮', percentage: 0.30 },
+        { name: '無助', percentage: 0.15 },
+      ],
+      symbols: [
+        { symbol: '圖書館', meaning: '知識的重擔，對未知的恐懼' },
+        { symbol: '沉重的腳步', meaning: '現實中感到停滯，難以前進的困境' },
+      ],
+      keywords: ['追逐', '圖書館', '黑暗', '逃跑', '書架', '恐懼'],
+    },
+  },
+  {
+    id: 'seed-04',
+    title: '考試卷空白的教室',
+    content: '坐在考試教室裡，監考老師發下考卷，我翻開一看，全是我看不懂的符號。旁邊的同學都奮筆疾書，我卻一個字也寫不出來。時鐘越走越快，我的手抖個不停，試著亂寫幾個字，但筆一直沒有墨水。鐘聲響起，我的考卷還是一片空白。',
+    date: '2026-05-22',
+    mood: '😰 緊張',
+    clarity: 'normal',
+    dreamType: '日常',
+    createdAt: '2026-05-22T05:15:00.000Z',
+    analysis: {
+      summary: '經典考試焦慮夢，即使已離開學生時代，此類夢境仍反映對自我表現與評價的深層焦慮。',
+      zhougongInterpretation: '夢見考試不順，主近期有重要抉擇或評估，宜放鬆心態應對。',
+      themes: ['焦慮', '自我懷疑', '表現壓力'],
+      emotions: [
+        { name: '緊張', percentage: 0.60 },
+        { name: '羞恥', percentage: 0.25 },
+        { name: '無力感', percentage: 0.15 },
+      ],
+      symbols: [
+        { symbol: '空白考卷', meaning: '對自我能力的質疑，害怕被評斷' },
+        { symbol: '沒有墨水的筆', meaning: '感覺表達能力受限，無法呈現真實的自己' },
+      ],
+      keywords: ['考試', '空白', '緊張', '時鐘', '教室', '評價'],
+    },
+  },
+  {
+    id: 'seed-05',
+    title: '海邊的橘色黃昏',
+    content: '和一個說不清楚臉孔的人在海邊散步，夕陽把海水染成橘金色。我們沒有說什麼話，只是靜靜地並排走著，偶爾踩到海浪的邊緣，冷冷的海水浸過腳踝。遠處有漁船的輪廓，海鳥在空中劃出弧線。那種感覺很完整，像是缺失的某個部分被填滿了。',
+    date: '2026-05-20',
+    mood: '😌 平靜',
+    clarity: 'clear',
+    dreamType: '浪漫',
+    createdAt: '2026-05-20T07:55:00.000Z',
+    analysis: {
+      summary: '充滿詩意的夢境，反映內心對陪伴與情感連結的渴望，橘色黃昏象徵溫柔與短暫的完美時刻。',
+      zhougongInterpretation: '夢見夕陽海邊，主感情運佳，可能有新的緣分或現有關係更加深厚。',
+      themes: ['陪伴', '浪漫', '圓滿'],
+      emotions: [
+        { name: '溫柔', percentage: 0.40 },
+        { name: '滿足', percentage: 0.35 },
+        { name: '平靜', percentage: 0.25 },
+      ],
+      symbols: [
+        { symbol: '黃昏海岸', meaning: '美好但短暫，珍貴的當下時刻' },
+        { symbol: '模糊的人', meaning: '對理想伴侶或深度連結的潛意識投射' },
+      ],
+      keywords: ['海邊', '夕陽', '散步', '橘色', '平靜', '陪伴'],
+    },
+  },
+  {
+    id: 'seed-06',
+    title: '會說話的古老鏡子',
+    content: '家裡突然多了一面古舊的落地鏡，銅製的鏡框上刻著看不懂的文字。我走近，鏡中的倒影比我慢半拍，然後開口說話，聲音很低沉，說了一句我聽不清的話。我想靠近聽清楚，鏡子卻突然碎裂成無數片，每一片都映著不同的我，有些是童年，有些是陌生的臉。',
+    date: '2026-05-18',
+    mood: '😲 驚訝',
+    clarity: 'normal',
+    dreamType: '靈異',
+    createdAt: '2026-05-18T04:22:00.000Z',
+    analysis: {
+      summary: '鏡子夢境通常與自我認同有關，碎裂的倒影反映對自我多面性的探索與不確定感。',
+      zhougongInterpretation: '夢見鏡子碎裂，宜審視近期決定是否有所偏差，注意溝通誤解。',
+      themes: ['自我認同', '神秘', '多面性'],
+      emotions: [
+        { name: '驚奇', percentage: 0.35 },
+        { name: '不安', percentage: 0.40 },
+        { name: '好奇', percentage: 0.25 },
+      ],
+      symbols: [
+        { symbol: '古老鏡子', meaning: '潛意識的出口，過去與現在的交界' },
+        { symbol: '碎裂的倒影', meaning: '自我認同的分裂，不同的人生可能性' },
+      ],
+      keywords: ['鏡子', '倒影', '碎裂', '古老', '說話', '神秘'],
+    },
+  },
+  {
+    id: 'seed-07',
+    title: '搭乘火車去未知的終點',
+    content: '坐上一列不知道終點站的火車，車廂裡的人都穿著不同年代的衣服。窗外的風景從城市變成曠野，再變成我從來沒見過的地形——像是紅色的山丘和發光的植物。座位旁的老人遞給我一個信封說「到了你就知道了」，但火車一直沒有到站，窗外的光愈來愈亮。',
+    date: '2026-05-16',
+    mood: '😲 驚訝',
+    clarity: 'clear',
+    dreamType: '冒險',
+    createdAt: '2026-05-16T06:08:00.000Z',
+    analysis: {
+      summary: '旅途夢境象徵人生的過渡與探索，未知終點反映對未來的不確定卻充滿期待的心態。',
+      zhougongInterpretation: '夢見搭乘火車，主有新的旅程或轉變即將到來，宜把握機會。',
+      themes: ['旅程', '未知', '轉變'],
+      emotions: [
+        { name: '期待', percentage: 0.45 },
+        { name: '好奇', percentage: 0.35 },
+        { name: '迷惘', percentage: 0.20 },
+      ],
+      symbols: [
+        { symbol: '無終點的火車', meaning: '人生旅程的延續，對目的地的探索' },
+        { symbol: '信封', meaning: '未解開的秘密，等待揭曉的命運' },
+      ],
+      keywords: ['火車', '旅行', '未知', '信封', '光芒', '探索'],
+    },
+  },
+  {
+    id: 'seed-08',
+    title: '空蕩蕩的老學校',
+    content: '走進一所空無一人的學校，走廊上貼著我國中時代的成績單和照片。教室門都開著，黑板上寫著熟悉的老師名字，但課桌上落了一層灰。我找到自己的座位坐下，抽屜裡有一本沒寫完的日記。翻開來，字跡是我的，內容卻是我不記得寫過的事。',
+    date: '2026-05-14',
+    mood: '😐 茫然',
+    clarity: 'fuzzy',
+    dreamType: '懷舊',
+    createdAt: '2026-05-14T05:50:00.000Z',
+    analysis: {
+      summary: '充滿遺忘感的懷舊夢，空曠的學校象徵已逝去的青春，未完成的日記代表未解的過去。',
+      zhougongInterpretation: '夢見舊學校，主近期需回顧過去的決定，有未竟之事需要面對。',
+      themes: ['遺忘', '青春', '未竟之事'],
+      emotions: [
+        { name: '茫然', percentage: 0.40 },
+        { name: '感傷', percentage: 0.35 },
+        { name: '孤寂', percentage: 0.25 },
+      ],
+      symbols: [
+        { symbol: '空蕩學校', meaning: '失去的青春與機會，對過去的緬懷' },
+        { symbol: '未完成的日記', meaning: '未解決的過去情緒或未說出口的話' },
+      ],
+      keywords: ['學校', '空曠', '日記', '青春', '記憶', '遺忘'],
+    },
+  },
+  {
+    id: 'seed-09',
+    title: '穿越沙漠找到綠洲',
+    content: '獨自穿越一片廣闊的紅色沙漠，太陽很烈但我不覺得熱。沙地上有隱約可見的腳印引路，我跟著走了很久。翻過一個大沙丘，突然出現一片綠洲，有清澈的水和高大的棕櫚樹。我跳進水裡，感覺所有的疲憊瞬間消散。水底有一條發光的魚游過，對我眨了眨眼。',
+    date: '2026-05-12',
+    mood: '😊 愉快',
+    clarity: 'clear',
+    dreamType: '冒險',
+    createdAt: '2026-05-12T07:30:00.000Z',
+    analysis: {
+      summary: '克服困難後找到報償的積極夢境，沙漠後的綠洲象徵經歷艱辛後的獎勵與希望。',
+      zhougongInterpretation: '夢見綠洲，大吉之兆，主近期困難將迎刃而解，好運將至。',
+      themes: ['毅力', '希望', '回報'],
+      emotions: [
+        { name: '解脫', percentage: 0.40 },
+        { name: '喜悅', percentage: 0.40 },
+        { name: '滿足', percentage: 0.20 },
+      ],
+      symbols: [
+        { symbol: '沙漠', meaning: '人生的困境與考驗，需獨自面對的挑戰' },
+        { symbol: '綠洲', meaning: '努力後的獎勵，心靈的滋養與補給' },
+      ],
+      keywords: ['沙漠', '綠洲', '冒險', '水', '發光', '希望'],
+    },
+  },
+  {
+    id: 'seed-10',
+    title: '飛翔在城市上空',
+    content: '突然發現自己能飛，從房間的窗戶飛出去，越過街道和大樓屋頂。夜晚的城市燈火從上面看像是撒落的星星。我飛得越來越高，空氣越來越冷，但心情卻越來越輕盈。看見遠處的山和閃光的海面，感覺整個世界都可以被我看見。然後風向轉變，我順著氣流滑翔，完全不需要努力。',
+    date: '2026-05-10',
+    mood: '😊 愉快',
+    clarity: 'clear',
+    dreamType: '奇幻',
+    createdAt: '2026-05-10T06:45:00.000Z',
+    analysis: {
+      summary: '飛翔夢是最常見的正向夢境之一，象徵擺脫束縛、獲得掌控感與自由的心理需求。',
+      zhougongInterpretation: '夢見飛翔，主諸事順利，近期計劃將可順利推進，宜積極行動。',
+      themes: ['自由', '掌控', '超越'],
+      emotions: [
+        { name: '自由', percentage: 0.50 },
+        { name: '興奮', percentage: 0.30 },
+        { name: '輕盈', percentage: 0.20 },
+      ],
+      symbols: [
+        { symbol: '飛翔', meaning: '超越限制的渴望，對自由與成就的追求' },
+        { symbol: '城市燈火', meaning: '人際連結與社會關係，從高處俯瞰的洞察力' },
+      ],
+      keywords: ['飛翔', '城市', '自由', '夜晚', '星光', '高空'],
+    },
+  },
+  {
+    id: 'seed-11',
+    title: '地下室傳來的音樂聲',
+    content: '家裡的地下室突然傳來輕柔的鋼琴聲，但我們家根本沒有鋼琴。我一個人走下去，燈開了一半又滅了。地下室比我記憶中大很多，走廊不斷延伸。音樂聲越來越清晰，但始終找不到源頭。最後在一個角落發現一把生鏽的椅子，上面放著一張泛黃的樂譜，最後一頁有一個署名，是我從未見過的名字。',
+    date: '2026-05-08',
+    mood: '😨 害怕',
+    clarity: 'normal',
+    dreamType: '靈異',
+    createdAt: '2026-05-08T02:30:00.000Z',
+    analysis: {
+      summary: '神秘的地下室探索夢，音樂聲象徵未被承認的才能或遺忘的記憶，生鏽椅子代表廢棄的潛力。',
+      zhougongInterpretation: '夢見地下室，主有隱藏的事物浮現，宜誠實面對自己的內心。',
+      themes: ['神秘', '隱藏', '探索'],
+      emotions: [
+        { name: '不安', percentage: 0.45 },
+        { name: '好奇', percentage: 0.35 },
+        { name: '困惑', percentage: 0.20 },
+      ],
+      symbols: [
+        { symbol: '地下室', meaning: '潛意識，被壓抑的情感或記憶' },
+        { symbol: '鋼琴聲', meaning: '未被表達的情感或被忽視的才華' },
+      ],
+      keywords: ['地下室', '音樂', '神秘', '黑暗', '鋼琴', '陰暗'],
+    },
+  },
+  {
+    id: 'seed-12',
+    title: '咖啡廳的週日下午',
+    content: '坐在窗邊的咖啡廳，外面下著細雨，玻璃上有水珠緩緩滑落。手上捧著一杯很香的咖啡，對面坐著一個朋友，聊著很輕鬆的話題。店裡放著爵士樂，隔壁桌的老先生在看報紙。所有事情都慢下來了，時間好像不重要，就這樣坐在那裡，感覺很好。',
+    date: '2026-05-05',
+    mood: '😌 平靜',
+    clarity: 'clear',
+    dreamType: '日常',
+    createdAt: '2026-05-05T08:10:00.000Z',
+    analysis: {
+      summary: '平靜溫馨的日常夢境，反映對簡單生活的嚮往和內心對慢生活的渴求。',
+      zhougongInterpretation: '夢見咖啡廳，主人際關係和諧，近期社交活動順遂。',
+      themes: ['慢活', '友誼', '當下'],
+      emotions: [
+        { name: '滿足', percentage: 0.45 },
+        { name: '輕鬆', percentage: 0.35 },
+        { name: '溫暖', percentage: 0.20 },
+      ],
+      symbols: [
+        { symbol: '細雨窗邊', meaning: '內心的平靜與對舒適的嚮往' },
+        { symbol: '咖啡香氣', meaning: '感官的滿足，對生活細節的珍視' },
+      ],
+      keywords: ['咖啡廳', '下雨', '平靜', '朋友', '爵士樂', '放鬆'],
+    },
+  },
+  {
+    id: 'seed-13',
+    title: '水族館裡的深海魚',
+    content: '一個人在巨大的水族館裡，燈光很暗，藍色的水光在牆上晃動。走廊兩側全是超大的玻璃水槽，裡面的魚越來越奇怪，有些發光，有些半透明，看得見內臟在跳動。走到最底層，有一個圓形大水槽，裡面只有一條巨大的魚，靜靜地懸浮在中央，眼睛直視著我，好像認識我一樣。',
+    date: '2026-05-02',
+    mood: '😐 茫然',
+    clarity: 'normal',
+    dreamType: '靈異',
+    createdAt: '2026-05-02T04:00:00.000Z',
+    analysis: {
+      summary: '深海意象代表潛意識的深層，巨大凝視的魚象徵被觀察的感覺或來自內心深處的訊息。',
+      zhougongInterpretation: '夢見深海生物，主有深層的情感或問題需要正視，宜靜心思考。',
+      themes: ['深層自我', '被觀察', '神秘'],
+      emotions: [
+        { name: '困惑', percentage: 0.35 },
+        { name: '敬畏', percentage: 0.40 },
+        { name: '孤獨', percentage: 0.25 },
+      ],
+      symbols: [
+        { symbol: '水族館', meaning: '與潛意識的接觸，情感的容器' },
+        { symbol: '凝視的巨魚', meaning: '來自深處的智慧或被壓抑的自我部分' },
+      ],
+      keywords: ['水族館', '深海', '魚', '凝視', '藍光', '神秘'],
+    },
+  },
+  {
+    id: 'seed-14',
+    title: '童年的雨天球場',
+    content: '夢到小學的操場，正在下大雨，但我還是一個人在打籃球。雨水把衣服全淋濕了，球在積水的地面彈跳。打著打著，周圍出現了小學的同學，大家一起在雨中奔跑嬉笑。老師拿著傘站在走廊，笑著搖搖頭沒有叫我們進去。那種濕淋淋但很快樂的感覺，好久沒有了。',
+    date: '2026-04-28',
+    mood: '😊 愉快',
+    clarity: 'normal',
+    dreamType: '懷舊',
+    createdAt: '2026-04-28T07:20:00.000Z',
+    analysis: {
+      summary: '溫馨的童年回憶夢，雨中玩耍代表無憂無慮的純真，反映對那段簡單快樂的時光的深深思念。',
+      zhougongInterpretation: '夢見兒時玩伴，主人際緣分深厚，舊友可能重聚。',
+      themes: ['童年', '純真', '友誼'],
+      emotions: [
+        { name: '懷念', percentage: 0.40 },
+        { name: '快樂', percentage: 0.40 },
+        { name: '溫馨', percentage: 0.20 },
+      ],
+      symbols: [
+        { symbol: '雨中操場', meaning: '童年的純粹快樂，不顧一切的自由感' },
+        { symbol: '籃球', meaning: '競爭與合作的平衡，青春的活力' },
+      ],
+      keywords: ['童年', '雨天', '操場', '同學', '快樂', '純真'],
+    },
+  },
+  {
+    id: 'seed-15',
+    title: '海底廢棄的城市遺跡',
+    content: '穿著潛水裝在深海裡游泳，發現一座沉入海底的古城。建築物上長滿了珊瑚和海草，魚群在窗口游進游出。廣場中央有一座雕像，面目已被侵蝕得模糊，只剩下伸出的一隻手。我游近想看清楚，整個城市開始緩緩發光，像是被喚醒了什麼，隱約聽見遠古的鐘聲在水中傳來。',
+    date: '2026-04-25',
+    mood: '😲 驚訝',
+    clarity: 'clear',
+    dreamType: '冒險',
+    createdAt: '2026-04-25T06:15:00.000Z',
+    analysis: {
+      summary: '宏大的探索夢境，海底古城象徵遺忘的歷史或個人深埋的記憶，發光的城市意味著重新發現的過程。',
+      zhougongInterpretation: '夢見古跡遺址，主有古老智慧或機遇浮現，宜把握過去的積累。',
+      themes: ['探索', '遺忘的歷史', '重新發現'],
+      emotions: [
+        { name: '驚嘆', percentage: 0.45 },
+        { name: '好奇', percentage: 0.35 },
+        { name: '神聖感', percentage: 0.20 },
+      ],
+      symbols: [
+        { symbol: '沉沒城市', meaning: '遺忘的記憶或過去的自我，等待被重新發現' },
+        { symbol: '發光的遺跡', meaning: '潛藏的價值與智慧，過去的積累重新閃耀' },
+      ],
+      keywords: ['海底', '古城', '遺跡', '珊瑚', '發光', '探索'],
+    },
+  },
+];
+
+export function seedDemoData(): void {
+  const existing = localStorage.getItem(KEY);
+  if (existing) {
+    try {
+      const parsed = JSON.parse(existing);
+      if (Array.isArray(parsed) && parsed.length > 0) return;
+    } catch { /* continue */ }
+  }
+  localStorage.setItem(KEY, JSON.stringify(SEED_DREAMS));
+}

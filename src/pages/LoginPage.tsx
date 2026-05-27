@@ -4,39 +4,17 @@ import { useAuth } from '../context/AuthContext';
 
 type Step = 'login' | 'register';
 
-// ── Minimal star bg for login page ───────────────────────────────────────────
-function MiniStars() {
-  return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      {[...Array(50)].map((_, i) => (
-        <div
-          key={i}
-          className="absolute rounded-full bg-white"
-          style={{
-            left: `${(i * 1.97 * 31.7) % 100}%`,
-            top: `${(i * 1.97 * 17.3) % 100}%`,
-            width: `${i % 5 === 0 ? 2 : 1}px`,
-            height: `${i % 5 === 0 ? 2 : 1}px`,
-            opacity: 0.15 + (i % 5) * 0.07,
-            animation: `twinkle ${2 + (i % 4)}s ${(i % 6) * 0.5}s ease-in-out infinite`,
-          }}
-        />
-      ))}
-    </div>
-  );
-}
-
 export default function LoginPage() {
   const { login, register, isLoggedIn } = useAuth();
   const navigate = useNavigate();
   const [step, setStep] = useState<Step>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [nickname, setNickname] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  // If already logged in, redirect to home
   useEffect(() => {
     if (isLoggedIn) navigate('/', { replace: true });
   }, [isLoggedIn, navigate]);
@@ -49,7 +27,7 @@ export default function LoginPage() {
       if (step === 'login') {
         await login(email, password);
       } else {
-        await register(email, password);
+        await register(email, password, nickname);
         await login(email, password);
       }
       setSuccess(true);
@@ -64,24 +42,15 @@ export default function LoginPage() {
   return (
     <div
       className="fixed inset-0 flex flex-col items-center justify-center px-6"
-      style={{
-        background: 'linear-gradient(160deg, #050810 0%, #090b1a 35%, #12102e 65%, #050810 100%)',
-      }}
+      style={{ background: 'linear-gradient(160deg, #EDE8DE 0%, #E8E0D5 45%, #EDE8DE 100%)' }}
     >
-      <MiniStars />
-
-      {/* Soft glow beneath card */}
-      <div
-        className="absolute pointer-events-none"
-        style={{
-          width: '400px',
-          height: '400px',
-          background: 'radial-gradient(circle, rgba(196,168,117,0.07) 0%, transparent 65%)',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-        }}
-      />
+      {/* Ambient orbs */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-24 -left-24 w-80 h-80 rounded-full"
+          style={{ background: 'radial-gradient(circle, rgba(196,168,117,0.08) 0%, transparent 65%)' }} />
+        <div className="absolute -bottom-20 -right-20 w-72 h-72 rounded-full"
+          style={{ background: 'radial-gradient(circle, rgba(196,129,90,0.06) 0%, transparent 65%)' }} />
+      </div>
 
       <div className="relative z-10 w-full max-w-sm animate-slide-up">
 
@@ -89,39 +58,37 @@ export default function LoginPage() {
         <div className="text-center mb-8">
           <button
             onClick={() => navigate('/landing')}
-            className="text-dream-subtle text-xs mb-6 hover:text-dream-muted transition-colors tracking-widest block mx-auto"
-            style={{ letterSpacing: '0.12em' }}
+            className="text-morandi-subtle text-xs mb-6 hover:text-morandi-muted transition-colors tracking-widest block mx-auto"
+            style={{ letterSpacing: '0.10em' }}
           >
             ← 返回
           </button>
-          <div
-            className="text-5xl mb-5 inline-block animate-float"
-            style={{ filter: 'drop-shadow(0 0 20px rgba(196,168,117,0.5))' }}
-          >
+          <div className="text-5xl mb-5 inline-block animate-float"
+            style={{ filter: 'drop-shadow(0 4px 16px rgba(196,129,90,0.2))' }}>
             🌙
           </div>
-          <h1 className="text-xl font-bold text-dream-text tracking-wider mb-2">
+          <h1 className="text-xl font-bold text-morandi-text tracking-wider mb-2">
             {step === 'register' ? '建立夢境帳號' : '進入你的夢境'}
           </h1>
-          <p className="text-dream-subtle text-xs tracking-wide">
-            {step === 'register'
-              ? '開始記錄你的夢境旅程'
-              : '登入以同步你的所有夢境'}
+          <p className="text-morandi-subtle text-xs tracking-wide">
+            {step === 'register' ? '開始記錄你的夢境旅程' : '登入以同步你的所有夢境'}
           </p>
         </div>
 
-        {/* Glass card */}
-        <div
-          className="rounded-3xl p-7 shadow-dream"
-          style={{
-            background: 'rgba(255,255,255,0.05)',
-            backdropFilter: 'blur(24px) saturate(160%)',
-            border: '1px solid rgba(255,255,255,0.10)',
-            boxShadow: '0 8px 40px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.08)',
-          }}
-        >
+        {/* Card */}
+        <div className="glass-morandi-strong rounded-3xl p-7 shadow-morandi-md">
           <form onSubmit={handle} className="space-y-4">
             <div className="space-y-3">
+              {step === 'register' && (
+                <LoginInput
+                  type="text"
+                  value={nickname}
+                  onChange={e => setNickname(e.target.value)}
+                  placeholder="顯示名稱"
+                  required
+                  autoComplete="nickname"
+                />
+              )}
               <LoginInput
                 type="email"
                 value={email}
@@ -142,27 +109,15 @@ export default function LoginPage() {
             </div>
 
             {error && (
-              <div
-                className="rounded-xl px-4 py-2.5 text-xs text-center"
-                style={{
-                  background: 'rgba(180,80,80,0.15)',
-                  border: '1px solid rgba(200,100,100,0.25)',
-                  color: '#e8a0a0',
-                }}
-              >
+              <div className="rounded-xl px-4 py-2.5 text-xs text-center text-morandi-error"
+                style={{ background: 'rgba(192,112,112,0.08)', border: '1px solid rgba(192,112,112,0.2)' }}>
                 {error}
               </div>
             )}
 
             {success && (
-              <div
-                className="rounded-xl px-4 py-2.5 text-xs text-center"
-                style={{
-                  background: 'rgba(196,168,117,0.15)',
-                  border: '1px solid rgba(196,168,117,0.3)',
-                  color: '#c4a875',
-                }}
-              >
+              <div className="rounded-xl px-4 py-2.5 text-xs text-center"
+                style={{ background: 'rgba(196,168,117,0.10)', border: '1px solid rgba(196,168,117,0.25)', color: '#C4815A' }}>
                 ✓ 登入成功，進入夢境中…
               </div>
             )}
@@ -173,28 +128,24 @@ export default function LoginPage() {
               className="w-full py-4 rounded-full font-semibold text-sm tracking-widest transition-all duration-300 mt-1 disabled:opacity-50 active:scale-[0.98]"
               style={{
                 background: loading || success
-                  ? 'rgba(196,168,117,0.2)'
-                  : 'linear-gradient(135deg, rgba(196,168,117,0.25), rgba(196,129,90,0.35))',
-                border: '1px solid rgba(196,168,117,0.4)',
-                color: '#e8d5a0',
-                letterSpacing: '0.12em',
-                boxShadow: '0 0 20px rgba(196,168,117,0.2)',
+                  ? 'rgba(196,129,90,0.25)'
+                  : 'linear-gradient(135deg, #C4815A, #b8714e)',
+                color: '#fff',
+                letterSpacing: '0.10em',
+                boxShadow: loading || success ? 'none' : '0 6px 20px rgba(196,129,90,0.3)',
+                border: 'none',
               }}
             >
               {loading ? '驗證身份中…' : success ? '歡迎回來 ✓' : step === 'login' ? '進入夢境' : '建立帳號'}
             </button>
           </form>
 
-          <div
-            className="mt-1 pt-5"
-            style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}
-          >
-            <p className="text-center text-dream-subtle text-xs tracking-wide">
+          <div className="mt-5 pt-5" style={{ borderTop: '1px solid rgba(229,221,211,0.8)' }}>
+            <p className="text-center text-morandi-subtle text-xs tracking-wide">
               {step === 'login' ? '還沒有帳號？' : '已有帳號？'}
               <button
-                onClick={() => { setStep(step === 'login' ? 'register' : 'login'); setError(''); }}
-                className="ml-1 transition-colors"
-                style={{ color: '#c4a875' }}
+                onClick={() => { setStep(step === 'login' ? 'register' : 'login'); setError(''); setNickname(''); }}
+                className="ml-1 text-morandi-accent hover:text-morandi-accent/80 transition-colors"
               >
                 {step === 'login' ? '免費建立' : '前往登入'}
               </button>
@@ -202,11 +153,8 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* Bottom tagline */}
-        <p
-          className="text-center text-dream-subtle text-xs mt-8 tracking-widest"
-          style={{ letterSpacing: '0.12em' }}
-        >
+        <p className="text-center text-morandi-subtle text-xs mt-8 tracking-widest"
+          style={{ letterSpacing: '0.10em' }}>
           每一個夢，都值得被記錄
         </p>
       </div>
@@ -225,25 +173,6 @@ function friendlyError(err: unknown): string {
 const LoginInput = ({ ...props }: React.InputHTMLAttributes<HTMLInputElement>) => (
   <input
     {...props}
-    style={{
-      background: 'rgba(255,255,255,0.05)',
-      border: '1px solid rgba(255,255,255,0.12)',
-      borderRadius: '1rem',
-      padding: '0.875rem 1rem',
-      width: '100%',
-      fontSize: '0.875rem',
-      color: '#e8e4f2',
-      outline: 'none',
-      transition: 'all 0.2s',
-      letterSpacing: '0.04em',
-    }}
-    onFocus={e => {
-      e.target.style.borderColor = 'rgba(196,168,117,0.5)';
-      e.target.style.boxShadow = '0 0 0 2px rgba(196,168,117,0.12)';
-    }}
-    onBlur={e => {
-      e.target.style.borderColor = 'rgba(255,255,255,0.12)';
-      e.target.style.boxShadow = 'none';
-    }}
+    className="w-full glass-morandi rounded-2xl px-4 py-3.5 text-sm text-morandi-text placeholder-morandi-subtle focus:outline-none focus:ring-2 focus:ring-morandi-accent/20 transition-all"
   />
 );

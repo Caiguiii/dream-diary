@@ -21,6 +21,15 @@ const BookIcon = () => (
   </svg>
 );
 
+const ChartIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+    <line x1="18" y1="20" x2="18" y2="10" />
+    <line x1="12" y1="20" x2="12" y2="4" />
+    <line x1="6" y1="20" x2="6" y2="14" />
+    <line x1="2" y1="20" x2="22" y2="20" />
+  </svg>
+);
+
 const StarIcon = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
     <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
@@ -31,6 +40,7 @@ const tabs = [
   { label: '首頁', path: '/', icon: <HomeIcon />, match: (p: string) => p === '/' },
   { label: '記錄', path: '/input', icon: <EditIcon />, match: (p: string) => p === '/input' },
   { label: '歷史', path: '/diary', icon: <BookIcon />, match: (p: string) => p.startsWith('/diary') || p.startsWith('/analysis') },
+  { label: '統計', path: '/stats', icon: <ChartIcon />, match: (p: string) => p.startsWith('/stats') },
   { label: '週報', path: '/weekly', icon: <StarIcon />, match: (p: string) => p.startsWith('/weekly') },
 ];
 
@@ -41,8 +51,17 @@ export default function BottomTabBar() {
   if (location.pathname === '/login') return null;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 bg-morandi-surface border-t border-morandi-border shadow-morandi-md">
-      <div className="max-w-md mx-auto flex items-center justify-around px-2 py-2">
+    <div className="
+        fixed bottom-0 left-0 right-0 z-50
+        bg-morandi-surface
+        border-t border-morandi-border
+        shadow-morandi-md
+        rounded-t-3xl
+      "
+    >
+    {/* <div className="bg-morandi-surface border border-morandi-border shadow-morandi-md rounded-t-3xl"> */}
+      {/* <div className="max-w-md mx-auto flex items-center justify-around px-2 pt-2 pb-2"> */}
+        <div className="max-w-md mx-auto flex items-center justify-around px-2 pt-2 pb-safe">
         {tabs.map(tab => {
           const active = tab.match(location.pathname);
           return (

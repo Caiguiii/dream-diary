@@ -42,3 +42,10 @@ export interface WeeklyReportData {
   dreamStory: string;
   generatedAt: string;
 }
+
+export interface WeeklyCacheEntry {
+  weekId: string;
+  generated: boolean;
+  generatedAt: string;
+  reportData: WeeklyReportData;
+}

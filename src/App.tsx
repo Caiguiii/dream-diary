@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Navbar from './components/Navbar';
 import BottomTabBar from './components/BottomTabBar';
+import Sidebar from './components/Sidebar';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import HomePage from './pages/HomePage';
@@ -34,21 +35,29 @@ function AppRoutes() {
   const location = useLocation();
   const isDarkPage = location.pathname === '/landing' || location.pathname === '/login';
 
-  return (
-    <div className={isDarkPage ? '' : 'min-h-screen bg-morandi-bg'}>
-      {/* Navbar hidden on dark full-screen pages */}
-      {!isDarkPage && <Navbar />}
+  if (isDarkPage) {
+    return (
+      <Routes>
+        <Route path="/landing" element={<PublicRoute><LandingPage /></PublicRoute>} />
+        <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
+      </Routes>
+    );
+  }
 
-      {isDarkPage ? (
-        // Full-screen dark pages — no wrapper constraints
-        <Routes>
-          <Route path="/landing" element={<PublicRoute><LandingPage /></PublicRoute>} />
-          <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
-        </Routes>
-      ) : (
-        // App shell with bottom tab
-        <>
-          <main className="max-w-md mx-auto px-4 pb-28 pt-2">
+  return (
+    <div className="flex bg-morandi-bg" style={{ height: '100dvh' }}>
+      {/* Desktop sidebar — hidden on mobile */}
+      <Sidebar />
+
+      {/* Main column */}
+      <div className="flex flex-col flex-1 min-w-0">
+        {/* Mobile-only top navbar */}
+        <div className="md:hidden">
+          <Navbar />
+        </div>
+
+        <main className="flex-1 overflow-y-auto">
+          <div className="max-w-md mx-auto md:max-w-2xl px-4 pt-2 pb-28 md:pb-8">
             <Routes>
               <Route path="/" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
               <Route path="/input" element={<ProtectedRoute><InputPage /></ProtectedRoute>} />
@@ -58,10 +67,14 @@ function AppRoutes() {
               <Route path="/weekly" element={<ProtectedRoute><WeeklyReportPage /></ProtectedRoute>} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
-          </main>
+          </div>
+        </main>
+
+        {/* Mobile-only bottom tab bar */}
+        <div className="md:hidden">
           <BottomTabBar />
-        </>
-      )}
+        </div>
+      </div>
     </div>
   );
 }

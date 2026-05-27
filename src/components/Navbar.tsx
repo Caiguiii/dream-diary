@@ -37,10 +37,12 @@ export default function Navbar() {
 
   const handleSync = async () => {
     setSyncStatus('syncing');
+
     try {
       await syncFromCloud();
-      setSyncStatus('success');
-      window.dispatchEvent(new Event('dreams-updated'));
+
+      window.location.reload();
+
     } catch (e) {
       setSyncError(e instanceof Error ? e.message : '同步失敗');
       setSyncStatus('error');
@@ -75,7 +77,7 @@ export default function Navbar() {
           className="text-morandi-text font-bold text-sm tracking-wider hover:text-morandi-accent transition-colors"
           style={{ letterSpacing: '0.08em' }}
         >
-          夢境日記
+          瑪麗蓮夢錄
         </button>
 
         {/* Right controls */}
